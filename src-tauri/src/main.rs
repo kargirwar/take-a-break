@@ -3,9 +3,10 @@
 
 use soloud::*;
 use std::process::Command;
-use std::io::{self, Cursor, Write};
+use std::io::{Cursor};
 use plist::Value;
 use std::fmt;
+use std::thread;
 
 enum LockedState {
     Locked,
@@ -23,28 +24,11 @@ impl fmt::Debug for LockedState {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-
-    println!("{:?}", is_locked());
-
-    let mut sl = Soloud::default()?;
-    sl.set_global_volume(3.0);
-
-    let mut wav = audio::Wav::default();
-
-    wav
-        .load_mem(include_bytes!("jara-si-dil-alto.ogg"))
-        .unwrap();
-
-    sl.play(&wav);
-
-
+fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-
-    Ok(())
 }
 
 fn is_locked() -> LockedState {
@@ -64,7 +48,7 @@ fn is_locked() -> LockedState {
         },
         Err(_) => return LockedState::Unknown,
     }
-    
+
     let v: Value;
     if let Ok(result) = Value::from_reader(Cursor::new(output)) {
         v = result;
@@ -88,5 +72,23 @@ fn is_locked() -> LockedState {
 
 #[tauri::command]
 fn greet(name: &str) -> String {
+    let _handle = thread::spawn(|| {
+        println!("{:?}", is_locked());
+        let mut sl = Soloud::default().unwrap();
+        sl.set_global_volume(3.0);
+
+        let mut wav = audio::Wav::default();
+
+        wav
+            .load_mem(include_bytes!("beep.mp3"))
+            .unwrap();
+
+        sl.play(&wav);
+
+        while sl.voice_count() > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    });
+
     format!("Hello, {}!", name)
 }
