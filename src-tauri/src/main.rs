@@ -2,9 +2,31 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use soloud::*;
+use std::process::Command;
+use std::io::{self, Cursor, Write};
+use plist::Value;
+use std::fmt;
 
-//fn main() {
+enum LockedState {
+    Locked,
+    Unlocked,
+    Unknown,
+}
+
+impl fmt::Debug for LockedState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            LockedState::Locked => write!(f, "Locked"),
+            LockedState::Unlocked => write!(f, "Unlocked"),
+            LockedState::Unknown => write!(f, "Unknown"),
+        }
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+    println!("{:?}", is_locked());
+
     let mut sl = Soloud::default()?;
     sl.set_global_volume(3.0);
 
@@ -13,15 +35,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     wav
         .load_mem(include_bytes!("jara-si-dil-alto.ogg"))
         .unwrap();
-
-    //let bytes = include_bytes!("jara-si-dil-alto.ogg");
-//
-    //unsafe {
-        //wav.load_raw_wav_8(bytes)?;
-    //}
-    //wav.load(&std::path::Path::new("./jara-si-dil-alto.ogg"))?;
-    //wav.load(&std::path::Path::new("/Users/pankaj/tauri/soloud-rs"))?;
-    //wav.load("jara-si-dil.ogg")?;
 
     sl.play(&wav);
 
@@ -32,6 +45,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("error while running tauri application");
 
     Ok(())
+}
+
+fn is_locked() -> LockedState {
+    let buf = Command::new("ioreg")
+        .args(&["-n", "Root", "-d1", "-a"])
+        .output();
+
+    let output;
+
+    match buf {
+        Ok(buf) => {
+            if buf.status.success() {
+                output = buf.stdout;
+            } else {
+                return LockedState::Unknown;
+            }
+        },
+        Err(_) => return LockedState::Unknown,
+    }
+    
+    let v: Value;
+    if let Ok(result) = Value::from_reader(Cursor::new(output)) {
+        v = result;
+    } else {
+        return LockedState::Unknown;
+    }
+
+    let is_locked = v.as_dictionary()
+        .and_then(|dict| dict.get("IOConsoleLocked"));
+
+    match is_locked {
+        Some(l) => {
+            if let Some(b) = l.as_boolean() {
+                return if b { LockedState::Locked } else { LockedState::Unlocked };
+            }
+            return LockedState::Unknown;
+        },
+        None => LockedState::Unknown,
+    }
 }
 
 #[tauri::command]
