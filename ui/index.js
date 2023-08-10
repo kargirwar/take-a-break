@@ -13,7 +13,15 @@ class Index {
         let n = Utils.generateNode(tmpl, {});
         this.container.append(n);
 
-        document.getElementById('header').innerHTML = "Header";
+        this.start = document.getElementById('start');
+
+        this.start.addEventListener('click', () => {
+            const { invoke } = window.__TAURI__.tauri
+
+            invoke('greet', { name: 'Pankaj' }).then((response) => {
+                console.log(response);
+            });
+        });
     }
 }
 
