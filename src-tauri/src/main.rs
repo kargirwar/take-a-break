@@ -1,14 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use soloud::*;
-use std::process::Command;
-use std::io::{Cursor};
 use plist::Value;
+use soloud::*;
 use std::fmt;
+use std::io::Cursor;
+use std::process::Command;
 use std::thread;
-use tokio::sync::mpsc::{Sender, Receiver};
 use tokio::sync::mpsc;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 enum LockedState {
     Locked,
@@ -35,7 +35,7 @@ impl fmt::Debug for LockedState {
 async fn main() {
     let (tx, mut rx): (Sender<u8>, Receiver<u8>) = mpsc::channel(10);
 
-    tokio::spawn(async move  {
+    tokio::spawn(async move {
         loop {
             match rx.recv().await {
                 Some(i) => println!("{:?}", i),
@@ -69,7 +69,7 @@ fn is_locked() -> LockedState {
             } else {
                 return LockedState::Unknown;
             }
-        },
+        }
         Err(_) => return LockedState::Unknown,
     }
 
@@ -80,16 +80,21 @@ fn is_locked() -> LockedState {
         return LockedState::Unknown;
     }
 
-    let is_locked = v.as_dictionary()
+    let is_locked = v
+        .as_dictionary()
         .and_then(|dict| dict.get("IOConsoleLocked"));
 
     match is_locked {
         Some(l) => {
             if let Some(b) = l.as_boolean() {
-                return if b { LockedState::Locked } else { LockedState::Unlocked };
+                return if b {
+                    LockedState::Locked
+                } else {
+                    LockedState::Unlocked
+                };
             }
             return LockedState::Unknown;
-        },
+        }
         None => LockedState::Unknown,
     }
 }
@@ -97,29 +102,29 @@ fn is_locked() -> LockedState {
 #[tauri::command]
 fn greet(name: &str) -> String {
     println!("Greet called");
-    //let _handle = thread::spawn(|| {
-        //println!("{:?}", is_locked());
-        //let mut sl = Soloud::default().unwrap();
-        //sl.set_global_volume(3.0);
-//
-        //let mut wav = audio::Wav::default();
-//
-        //wav
-            //.load_mem(include_bytes!("beep.mp3"))
-            //.unwrap();
-//
-        //sl.play(&wav);
-//
-        //while sl.voice_count() > 0 {
-            //std::thread::sleep(std::time::Duration::from_millis(100));
-        //}
-    //});
+    let _handle = thread::spawn(|| {
+        println!("{:?}", is_locked());
+        let mut sl = Soloud::default().unwrap();
+        sl.set_global_volume(3.0);
+
+        let mut wav = audio::Wav::default();
+
+        wav.load_mem(include_bytes!("beep.mp3")).unwrap();
+
+        sl.play(&wav);
+
+        while sl.voice_count() > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    });
 
     format!("Hello, {}!", name)
 }
 
 #[tauri::command]
 async fn my_custom_command(tx: tauri::State<'_, Sender<u8>>) -> Result<(), ()> {
-    tx.send(100).await;
-    Ok(())
+    match tx.send(100).await {
+        Ok(_) => return Ok(()),
+        Err(_) => return Err(()),
+    }
 }
