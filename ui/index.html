@@ -1,32 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Take a Break</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="./styles.css">
   </head>
   <body>
-    <h1 id="header1">Welcome from Tauri!</h1>
-    <h1 id="header2">Welcome from Tauri!</h1>
-    <script>
-      // access the pre-bundled global API functions
-      const { invoke } = window.__TAURI__.tauri
-
-      // now we can call our Command!
-      // You will see "Welcome from Tauri" replaced
-      // by "Hello, World!"!
-      invoke('greet', { name: 'Pankaj' })
-        // `invoke` returns a Promise
-        .then((response) => {
-            document.getElementById('header1').innerHTML = response;
-        });
-
-      invoke('my_custom_command')
-          .then((response) => {
-            document.getElementById('header2').innerHTML = response;
-          });
-
-
+    <div id="container"></div>
+    <script type="module" src="./index.js"></script>
+    <script id="index-template" type="code">
+      <div id="index-container">
+        <div id="icon-div"></div>
+        <div id="bottom-div"></div>
+      </div>
     </script>
   </body>
 </html>

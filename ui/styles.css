@@ -1,0 +1,32 @@
+body, html {
+	width:100%;
+	height:100%;
+	overflow:hidden;
+	background:black;
+	box-sizing: border-box;
+	padding:0;
+	margin:0;
+}
+
+#container {
+	width:100%;
+	height:100%;
+	box-sizing: border-box;
+}
+
+#index-container {
+	display: grid;
+	width:100%;
+	height:100%;
+	grid-template-rows: 1fr 12fr;
+	box-sizing: border-box;
+}
+
+/*index page*/
+#icon-div {
+	background-color: red;
+}
+
+#bottom-div {
+	background-color: blue;
+}

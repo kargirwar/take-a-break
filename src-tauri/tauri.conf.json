@@ -57,9 +57,9 @@
       {
         "fullscreen": false,
         "height": 600,
-        "resizable": true,
+        "resizable": false,
         "title": "App1",
-        "width": 800,
+        "width": 600,
 	"alwaysOnTop": false
       }
     ]
