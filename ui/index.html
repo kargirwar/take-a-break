@@ -6,7 +6,8 @@
     <title>Document</title>
   </head>
   <body>
-    <h1 id="header">Welcome from Tauri!</h1>
+    <h1 id="header1">Welcome from Tauri!</h1>
+    <h1 id="header2">Welcome from Tauri!</h1>
     <script>
       // access the pre-bundled global API functions
       const { invoke } = window.__TAURI__.tauri
@@ -17,8 +18,15 @@
       invoke('greet', { name: 'Pankaj' })
         // `invoke` returns a Promise
         .then((response) => {
-          window.header.innerHTML = response
-        })
+            document.getElementById('header1').innerHTML = response;
+        });
+
+      invoke('my_custom_command')
+          .then((response) => {
+            document.getElementById('header2').innerHTML = response;
+          });
+
+
     </script>
   </body>
 </html>
