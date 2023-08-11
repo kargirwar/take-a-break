@@ -18,13 +18,14 @@ body, html {
 	display: grid;
 	width:100%;
 	height:100%;
-	grid-template-rows: 6fr 4fr;
+	grid-template-rows: 2fr 4fr;
 	box-sizing: border-box;
 }
 
 /*index page*/
 #icon-div {
 	background-color: #efefef;
+	position:relative;
 }
 
 #bottom-div {
@@ -34,7 +35,6 @@ body, html {
 	justify-content:center;
 }
 
-button {
-	padding: 1em;
-	border-radius: 10px;
+h1 {
+	color: white;
 }

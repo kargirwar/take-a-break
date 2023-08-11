@@ -4,18 +4,27 @@
     <title>Take a Break</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="./pure-min.css">
     <link rel="stylesheet" type="text/css" href="./styles.css">
   </head>
   <body>
     <div id="container"></div>
-    <script type="module" src="./index.js"></script>
+    <script type="module" src="./router.js"></script>
     <script id="index-template" type="code">
       <div id="index-container">
-        <div id="icon-div"></div>
+        <div id="icon-div"><img id="icon" src="./icon.svg"></div>
         <div id="bottom-div">
-          <button id="start">Start</button>
+          <button class="pure-button pure-button-primary" id="start">Start</button>
         </div>
       </div>
+    </script>
+    <script id="rule-editor-template" type="code">
+      <h1>Add/Edit Rule</h1>
+      <button id="save-rule">Done</button>
+    </script>
+    <script id="rules-template" type="code">
+      <h1>Rules</h1>
+      <button id="edit-rule">Edit</button>
     </script>
   </body>
 </html>
