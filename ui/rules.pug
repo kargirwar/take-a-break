@@ -1,3 +1,46 @@
 script#rules-template(type="code")
-    h1 Rules
-    button#edit-rule Edit
+    #rules
+        #tabs-header
+            #tab-rules.active 
+                span Rules &nbsp; &nbsp;
+                span#add-rule 
+                    <svg class="icon icon-plus"><use xlink:href="symbol-defs.svg#icon-plus"></use></svg>
+            #tab-status 
+                span Status
+
+        #tabs-content
+            #rules-content
+            #status-content Status
+            
+
+script#rule-template(type="code")
+    div.rule.card
+        .interval-container
+            .label Every
+            .field
+                select.interval.control.is-fullwidth
+                    include intervals.pug
+        .days-container
+            .label On
+            .field
+                label Weekdays
+                input(type="radio" name="days")
+                label Weekends
+                input(type="radio" name="days")
+        .from-container
+            .label From
+            .field
+                select.from.control
+                    include hours.pug
+        .to-container
+            .label To
+            .field
+                select.to.control
+                    include hours.pug
+        .save-rule
+            <svg class="icon"><use xlink:href="symbol-defs.svg#icon-floppy-disk"></use></svg>
+
+        .del-rule
+            <svg class="icon"><use xlink:href="symbol-defs.svg#icon-bin2"></use></svg>
+
+

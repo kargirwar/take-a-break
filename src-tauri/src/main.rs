@@ -19,14 +19,6 @@ async fn main() {
 
     let app = tauri::Builder::default()
         .manage(tx)
-		//.setup(|app| {
-			//#[cfg(debug_assertions)] // only include this code on debug builds
-			//{
-				//let window = app.get_window("main").unwrap();
-				//window.open_devtools();
-			//}
-			//Ok(())
-		//})
         .invoke_handler(tauri::generate_handler![greet, my_custom_command])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

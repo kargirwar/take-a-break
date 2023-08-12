@@ -18,6 +18,16 @@ class Utils {
 		template.innerHTML = templ.trim()
 		return template.content
 	}
+
+    static alert(msg, time) {
+        let $dialog = document.querySelector('#dialog-container');
+        $dialog.querySelector('#dialog').innerHTML = msg;
+        $dialog.style.display = 'flex';
+
+        setTimeout(() => {
+            $dialog.style.display = 'none';
+        }, time);
+    }
 }
 
 export { Utils }

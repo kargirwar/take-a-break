@@ -24,7 +24,7 @@ class Router {
             this.handlePageChange(e.page);
         });
 
-        this.index.load();
+        this.rules.load();
     }
 
     handlePageChange(page) {
