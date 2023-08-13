@@ -36,6 +36,13 @@ class Rules {
             }
         });
 
+        //Track changes
+        this.$root.addEventListener('change', (e) => {
+            let $p = e.target.closest('.rule');
+            $p.style.borderColor = 'yellow';
+            $p.querySelector('.save-rule').style.display = 'block';
+        });
+
         //debug
         document.querySelector('#add-rule').dispatchEvent(new Event('click'));
     }
@@ -44,10 +51,28 @@ class Rules {
         let from = parseInt($n.querySelector('.from').value);
         let to = parseInt($n.querySelector('.to').value);
 
+        let days;
+        $n.querySelectorAll('input[name="days"]').forEach((r) => {
+            if (r.checked) {
+                days = r.value;
+            }
+        });
+
+        Logger.Log(TAG, days);
+
+        if (days == undefined) {
+            Utils.alert("Please select days", 3000);
+            return
+        }
+
         if (to <= from) {
             Utils.alert("To hours must be greater than from hours", 3000);
             return;
         }
+
+        Utils.info("Saved", 3000);
+        $n.style.borderColor = 'grey';
+        $n.querySelector('.save-rule').style.display = 'none';
     }
 
     setupTabs() {

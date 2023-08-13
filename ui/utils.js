@@ -20,12 +20,26 @@ class Utils {
 	}
 
     static alert(msg, time) {
-        let $dialog = document.querySelector('#dialog-container');
-        $dialog.querySelector('#dialog').innerHTML = msg;
-        $dialog.style.display = 'flex';
+        let $root = document.querySelector('#dialog-container');
+        $root.style.display = 'flex';
+        let $dialog = $root.querySelector('#dialog'); 
+        $dialog.innerHTML = msg;
+        $dialog.style.background = 'orange'
 
         setTimeout(() => {
-            $dialog.style.display = 'none';
+            $root.style.display = 'none';
+        }, time);
+    }
+
+    static info(msg, time) {
+        let $root = document.querySelector('#dialog-container');
+        $root.style.display = 'flex';
+        let $dialog = $root.querySelector('#dialog'); 
+        $dialog.innerHTML = msg;
+        $dialog.style.background = 'blue'
+
+        setTimeout(() => {
+            $root.style.display = 'none';
         }, time);
     }
 }

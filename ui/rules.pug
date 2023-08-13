@@ -24,19 +24,19 @@ script#rule-template(type="code")
             .label On
             .field
                 label Weekdays
-                input(type="radio" name="days")
+                input(type="radio" name="days" value="weekdays" checked)
                 label Weekends
-                input(type="radio" name="days")
+                input(type="radio" name="days" value="weekends")
         .from-container
             .label From
             .field
                 select.from.control
-                    include hours.pug
+                    include from_hours.pug
         .to-container
             .label To
             .field
                 select.to.control
-                    include hours.pug
+                    include to_hours.pug
         .save-rule
             <svg class="icon"><use xlink:href="symbol-defs.svg#icon-floppy-disk"></use></svg>
 
