@@ -14,6 +14,10 @@ class Constants {
     static get PAGE_RULES() {
 		return 'page-rules';
     }
+
+    static get EVENT_RULES_SAVED() {
+		return 'event-rules-saved';
+    }
 }
 
 export { Constants }

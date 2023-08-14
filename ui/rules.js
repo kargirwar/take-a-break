@@ -28,7 +28,7 @@ class Rules {
             if ($n.classList.contains('del-rule')) {
                 $n.closest('.rule').remove();
 
-                //just re-read everything do we don't have to worry about serial
+                //just re-read everything so we don't have to worry about serial
                 this.rules = this.getRules();
                 //this is necessary so that dom is in step with the object in memory
                 this.updateSerial();
@@ -38,11 +38,10 @@ class Rules {
         this.$root.addEventListener('click', (e) => {
             let $n = e.target;
             if ($n.classList.contains('save-rule')) {
-                let saved = this.saveRule($n.parentElement, parseInt(e.target.dataset.serial));
-
-                if (saved) {
-                    this.updateSerial();
-                }
+                this.saveRule($n.parentElement, parseInt(e.target.dataset.serial));
+                PubSub.publish(Constants.EVENT_RULES_SAVED, {
+                    rules: this.rules
+                });
             }
         });
 
@@ -79,17 +78,17 @@ class Rules {
 
         if (days.length == 0) {
             Utils.alert("Please select days", 3000);
-            return false
+            return;
         }
 
         if (to <= from) {
             Utils.alert("To hours must be greater than from hours", 3000);
-            return false;
+            return;
         }
 
         if (this.isDuplicate(this.getRule($r), serial)) {
             Utils.alert("Duplicate rule", 3000);
-            return false;
+            return;
         }
 
         Logger.Log(TAG, JSON.stringify(this.getRules()));
@@ -100,7 +99,7 @@ class Rules {
 
         this.rules = this.getRules();
 
-        return true;
+        return;
     }
 
     isDuplicate(r, serial = null) {
