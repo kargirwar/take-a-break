@@ -11,17 +11,26 @@ use crate::ui_handler::*;
 use crate::player::*;
 use tauri::Manager;
 
+//commands from UI
+const RULES_UPDATED: &str = "rules-updated";
+
+#[derive(Debug)]
+pub struct Command {
+    name: String,
+    payload: String
+}
+
 #[tokio::main]
 async fn main() {
-    let (tx, rx): (Sender<u8>, Receiver<u8>) = mpsc::channel(10);
+    let (tx, rx): (Sender<Command>, Receiver<Command>) = mpsc::channel(10);
 
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
     let app = tauri::Builder::default()
         .manage(tx)
-        .invoke_handler(tauri::generate_handler![greet, my_custom_command])
+        .invoke_handler(tauri::generate_handler![command])
         .build(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("error while building tauri application");
     
     let handle = app.handle();
     run(rx, handle);
@@ -35,16 +44,15 @@ async fn main() {
 }
 
 #[tauri::command]
-fn greet(name: &str) -> String {
-    println!("Greet called");
-    play();
-    format!("Hello, {}!", name)
-}
+async fn command(name: &str, payload: &str, tx: tauri::State<'_, Sender<Command>>) -> Result<(), ()> {
+    match name {
+        RULES_UPDATED => {
+            match tx.send(Command{name: String::from(name), payload: String::from(payload)}).await {
+                Ok(_) => return Ok(()),
+                Err(_) => return Err(()),
+            }
+        },
 
-#[tauri::command]
-async fn my_custom_command(tx: tauri::State<'_, Sender<u8>>) -> Result<(), ()> {
-    match tx.send(100).await {
-        Ok(_) => return Ok(()),
-        Err(_) => return Err(()),
+        &_ => Ok(())
     }
 }
