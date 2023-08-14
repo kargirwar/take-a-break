@@ -41,7 +41,15 @@ class Utils {
         setTimeout(() => {
             $root.style.display = 'none';
         }, time);
-    }
+	}
+
+	static range(min, max, step = 1) {
+		let arr = []
+		for (let i = min; i <= max; i = i + step) {
+			arr.push(i)
+		}
+		return arr
+	}
 }
 
 export { Utils }
