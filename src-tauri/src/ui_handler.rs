@@ -1,3 +1,4 @@
+mod alarm_manager;
 mod ui_handler {
 
     enum CommandName {
@@ -14,19 +15,20 @@ mod ui_handler {
     }
 
     #[derive(Debug, Deserialize)]
-    struct Rule {
-        days: Vec<String>,
-        from: u32,
-        interval: u32,
-        serial: u32,
-        to: u32,
+    pub struct Rule {
+        pub days: Vec<String>,
+        pub from: usize,
+        pub interval: usize,
+        pub serial: usize,
+        pub to: usize,
     }
 
-    use serde_json::Value;
     use serde::Deserialize;
+    use serde_json::Value;
     use tauri::AppHandle;
     use tauri::Wry;
     use tokio::sync::mpsc::Receiver;
+    use super::alarm_manager::*;
     //use tauri::Manager;
 
     pub fn run(mut rx: Receiver<String>, _handle: AppHandle<Wry>) {
@@ -65,7 +67,8 @@ mod ui_handler {
             let mut rule_objects: Vec<Rule> = Vec::new();
 
             for rule_json in rules {
-                let rule: Rule = serde_json::from_value(rule_json.clone()).expect("Rule deserialization error");
+                let rule: Rule =
+                    serde_json::from_value(rule_json.clone()).expect("Rule deserialization error");
                 rule_objects.push(rule);
             }
 
@@ -75,9 +78,8 @@ mod ui_handler {
     }
 
     fn update_alarms(rules: Vec<Rule>) {
-        for rule in rules {
-            println!("Rule: {:?}", rule);
-        }
+        let alarms = get_alarms(&rules);
+        println!("alarms: {:?}", alarms);
     }
 }
 
