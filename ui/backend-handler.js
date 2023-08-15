@@ -14,7 +14,7 @@ class BackendHandler {
 
             invoke('command', {
                 "payload": JSON.stringify({
-                    name: "rules-updated",
+                    name: "update-rules",
                     rules: e.rules})
             }).then((response) => {
                 //console.log(response);

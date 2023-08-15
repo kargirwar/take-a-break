@@ -15,13 +15,14 @@ async fn main() {
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
     let app = tauri::Builder::default()
-        .manage(tx)
+        .manage(tx.clone())
         .invoke_handler(tauri::generate_handler![command])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
     let handle = app.handle();
-    run(rx, handle);
+    let ui = UiHandler::new(rx, handle);
+    ui.run();
 
     app.run(|_app_handle, event| match event {
         tauri::RunEvent::ExitRequested { .. } => {

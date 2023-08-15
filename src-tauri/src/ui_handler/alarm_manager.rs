@@ -1,6 +1,32 @@
 mod alarm_manager {
-    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
     use crate::Rule;
+    use crossbeam_channel::{Receiver, Sender};
+    use std::collections::HashMap;
+    use std::thread;
+
+    pub struct AlarmManager {
+        tx: Sender<String>,
+        rx: Receiver<String>,
+    }
+
+    impl AlarmManager {
+        pub fn new(tx: Sender<String>, rx: Receiver<String>) -> Self {
+            Self {tx, rx}
+        }
+
+        pub fn run(self) {
+            thread::spawn(move || {
+                loop {
+                    let rx_result = self.rx.recv();
+                    match rx_result {
+                        Ok(i) => println!("OK in AlarmManager: {}", i),
+                        Err(_) => println!("Error in AlarmManager"),
+                    }
+                }
+            });
+        }
+    }
 
     fn get_hours(s: usize, e: usize) -> Vec<usize> {
         let mut hrs = Vec::new();
@@ -57,10 +83,7 @@ mod alarm_manager {
 
                     if e == hrs[i] {
                         if m % 60 == 0 {
-                            alarms
-                                .get_mut(d)
-                                .unwrap()
-                                .insert(e, vec![0]);
+                            alarms.get_mut(d).unwrap().insert(e, vec![0]);
                             println!("{} h: {} mins: {:?}", d, e, alarms[d].get(&e).unwrap());
                         }
                         break;
