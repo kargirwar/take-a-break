@@ -1,7 +1,7 @@
 mod player {
+    use crate::utils::*;
     use soloud::*;
     use std::thread;
-    use crate::utils::*;
 
     pub fn play() {
         thread::spawn(|| {

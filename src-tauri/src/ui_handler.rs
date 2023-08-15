@@ -1,10 +1,22 @@
-//commands from JS
-//const JS_COMMAND_RULES_UPDATED: &str = "rules-updated";
-
 mod ui_handler {
-    use tokio::sync::mpsc::{Receiver};
+
+    enum CommandName {
+        RulesUpdated,
+    }
+
+    impl CommandName {
+        fn from_str(name: &str) -> Option<Self> {
+            match name {
+                "rules-updated" => Some(CommandName::RulesUpdated),
+                _ => None,
+            }
+        }
+    }
+
+    use serde_json::Value;
     use tauri::AppHandle;
     use tauri::Wry;
+    use tokio::sync::mpsc::Receiver;
     //use tauri::Manager;
 
     pub fn run(mut rx: Receiver<String>, _handle: AppHandle<Wry>) {
@@ -12,8 +24,8 @@ mod ui_handler {
             loop {
                 match rx.recv().await {
                     //Some(i) => {},
-                    Some(i) => {handle_command(i)},
-                    None => ()
+                    Some(i) => handle_command(i),
+                    None => (),
                 }
             }
         });
@@ -26,8 +38,8 @@ mod ui_handler {
             println!("Parsed JSON: {:#?}", json);
 
             if let Some(name) = json.get("name").and_then(|n| n.as_str()) {
-                match name {
-                    "rules-updated" => handle_rules_updated(json),
+                match CommandName::from_str(name) {
+                    Some(CommandName::RulesUpdated) => handle_rules_updated(json),
                     _ => println!("none"),
                 }
             } else {
@@ -39,15 +51,15 @@ mod ui_handler {
     }
 
     fn handle_rules_updated(json: serde_json::Value) {
-        if let Some(payload) = json.get("payload").and_then(|p| p.as_str()) {
-            update_alarms(payload.to_string());
+        if let Some(_payload) = json.get("rules").and_then(Value::as_array) {
+            //update_alarms(payload);
         } else {
             println!("Invalid payload");
         }
     }
 
-    fn update_alarms(payload: String) {
-        println!("{}", "Updating alarms with".to_owned() + &payload);
+    fn update_alarms(_payload: Vec<serde_json::Value>) {
+        //println!("{}", "Updating alarms with".to_owned() + &payload);
     }
 }
 
