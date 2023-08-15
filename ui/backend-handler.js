@@ -12,12 +12,13 @@ class BackendHandler {
         PubSub.subscribe(Constants.EVENT_RULES_SAVED, (e) => {
             Logger.Log(TAG, JSON.stringify(e.rules));
 
-            invoke('command', {"name": "rules-updated", "payload": JSON.stringify(e.rules)}).then((response) => {
+            invoke('command', {
+                "payload": JSON.stringify({
+                    name: "rules-updated",
+                    rules: e.rules})
+            }).then((response) => {
                 //console.log(response);
             });
-//
-            //invoke('my_custom_command', {}).then((response) => {
-            //});
         });
 
         appWindow.listen('some_event', (e) => {

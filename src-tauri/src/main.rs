@@ -3,26 +3,14 @@
 
 mod utils;
 mod ui_handler;
-mod player;
 
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use crate::ui_handler::*;
-use crate::player::*;
-use tauri::Manager;
-
-//commands from UI
-const RULES_UPDATED: &str = "rules-updated";
-
-#[derive(Debug)]
-pub struct Command {
-    name: String,
-    payload: String
-}
 
 #[tokio::main]
 async fn main() {
-    let (tx, rx): (Sender<Command>, Receiver<Command>) = mpsc::channel(10);
+    let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel(10);
 
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
@@ -44,15 +32,9 @@ async fn main() {
 }
 
 #[tauri::command]
-async fn command(name: &str, payload: &str, tx: tauri::State<'_, Sender<Command>>) -> Result<(), ()> {
-    match name {
-        RULES_UPDATED => {
-            match tx.send(Command{name: String::from(name), payload: String::from(payload)}).await {
-                Ok(_) => return Ok(()),
-                Err(_) => return Err(()),
-            }
-        },
-
-        &_ => Ok(())
+async fn command(payload: &str, tx: tauri::State<'_, Sender<String>>) -> Result<(), ()> {
+    match tx.send(String::from(payload)).await {
+        Ok(_) => return Ok(()),
+        Err(_) => return Err(()),
     }
 }

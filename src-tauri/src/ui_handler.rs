@@ -1,40 +1,53 @@
+//commands from JS
+//const JS_COMMAND_RULES_UPDATED: &str = "rules-updated";
+
 mod ui_handler {
     use tokio::sync::mpsc::{Receiver};
     use tauri::AppHandle;
     use tauri::Wry;
-    use tauri::Manager;
-    use crate::Command;
+    //use tauri::Manager;
 
-    pub fn run(mut rx: Receiver<Command>, handle: AppHandle<Wry>) {
+    pub fn run(mut rx: Receiver<String>, _handle: AppHandle<Wry>) {
         tokio::spawn(async move {
             loop {
                 match rx.recv().await {
                     //Some(i) => {},
-                    Some(i) => {handle_command(i, &handle)},
+                    Some(i) => {handle_command(i)},
                     None => ()
                 }
             }
         });
     }
 
-    fn handle_command(cmd: Command, handle: &AppHandle<Wry>) {
+    fn handle_command(cmd: String) {
         println!("{:?}", cmd);
-        //handle.emit_all("some_event", "message").unwrap();
-        match cmd.name {
-            RULES_UPDATED => {update_rules(&cmd.payload)},
-            _ => ()
+
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&cmd) {
+            println!("Parsed JSON: {:#?}", json);
+
+            if let Some(name) = json.get("name").and_then(|n| n.as_str()) {
+                match name {
+                    "rules-updated" => handle_rules_updated(json),
+                    _ => println!("none"),
+                }
+            } else {
+                println!("No 'name' field or not a string in the JSON object.");
+            }
+        } else {
+            eprintln!("Error while parsing JSON");
         }
     }
 
-    fn update_rules(payload: &str) {
-        match serde_json::from_str::<serde_json::Value>(payload) {
-            Ok(json) => {
-                println!("Parsed JSON: {:#?}", json);
-            },
-            Err(err) => {
-                eprintln!("Error while parsing JSON: {}", err);
-            }
+    fn handle_rules_updated(json: serde_json::Value) {
+        if let Some(payload) = json.get("payload").and_then(|p| p.as_str()) {
+            update_alarms(payload.to_string());
+        } else {
+            println!("Invalid payload");
         }
+    }
+
+    fn update_alarms(payload: String) {
+        println!("{}", "Updating alarms with".to_owned() + &payload);
     }
 }
 
