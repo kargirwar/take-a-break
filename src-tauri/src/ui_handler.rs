@@ -13,7 +13,17 @@ mod ui_handler {
         }
     }
 
+    #[derive(Debug, Deserialize)]
+    struct Rule {
+        days: Vec<String>,
+        from: u32,
+        interval: u32,
+        serial: u32,
+        to: u32,
+    }
+
     use serde_json::Value;
+    use serde::Deserialize;
     use tauri::AppHandle;
     use tauri::Wry;
     use tokio::sync::mpsc::Receiver;
@@ -51,15 +61,23 @@ mod ui_handler {
     }
 
     fn handle_rules_updated(json: serde_json::Value) {
-        if let Some(_payload) = json.get("rules").and_then(Value::as_array) {
-            //update_alarms(payload);
-        } else {
-            println!("Invalid payload");
+        if let Some(rules) = json.get("rules").and_then(serde_json::Value::as_array) {
+            let mut rule_objects: Vec<Rule> = Vec::new();
+
+            for rule_json in rules {
+                let rule: Rule = serde_json::from_value(rule_json.clone()).expect("Rule deserialization error");
+                rule_objects.push(rule);
+            }
+
+            println!("{:#?}", rule_objects);
+            update_alarms(rule_objects);
         }
     }
 
-    fn update_alarms(_payload: Vec<serde_json::Value>) {
-        //println!("{}", "Updating alarms with".to_owned() + &payload);
+    fn update_alarms(rules: Vec<Rule>) {
+        for rule in rules {
+            println!("Rule: {:?}", rule);
+        }
     }
 }
 
