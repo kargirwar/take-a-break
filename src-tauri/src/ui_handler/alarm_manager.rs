@@ -1,16 +1,26 @@
 mod alarm_manager {
-    use crate::Rule;
     use crate::CommandName;
+    use crate::Command;
+    use serde::Deserialize;
     use std::collections::HashMap;
-    use tokio::sync::mpsc::{Receiver, Sender};
+    use tokio::sync::broadcast::{Receiver, Sender};
+
+    #[derive(Debug, Deserialize, Clone)]
+    pub struct Rule {
+        pub days: Vec<String>,
+        pub from: usize,
+        pub interval: usize,
+        pub serial: usize,
+        pub to: usize,
+    }
 
     pub struct AlarmManager {
-        tx: Sender<String>,
-        rx: Receiver<String>,
+        tx: Sender<Command>,
+        rx: Receiver<Command>,
     }
 
     impl AlarmManager {
-        pub fn new(tx: Sender<String>, rx: Receiver<String>) -> Self {
+        pub fn new(tx: Sender<Command>, rx: Receiver<Command>) -> Self {
             Self {tx, rx}
         }
 
@@ -19,56 +29,25 @@ mod alarm_manager {
             tokio::spawn(async move {
                 loop {
                     match self.rx.recv().await {
-                        Some(i) => {
-                            self.handle_command(i).await;
-                        },
-                        None => print!("e"),
-                    }
+                        Ok(i) => self.handle_command(i),
+                        Err(e) => println!("{}", e)
+                    };
                 }
             });
         }
 
-        async fn handle_command(&self, cmd: String) {
+        fn handle_command(&self, cmd: Command) {
             println!("alarm_manager:{:?}", cmd);
-
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&cmd) {
-                println!("alarm_manager:Parsed JSON: {:#?}", json);
-
-                if let Some(name) = json.get("name").and_then(|n| n.as_str()) {
-                    match CommandName::from_str(name) {
-                        Some(CommandName::UpdateRules) => {
-                            handle_update_rules(json);
-                            self.tx.send("Ack".to_string()).await.unwrap();
-                        }
-                        _ => println!("alarm_manager:none"),
-                    }
-                } else {
-                    println!("alarm_manager:No 'name' field or not a string in the JSON object.");
-                }
-            } else {
-                eprintln!("alarm_manager:Error while parsing JSON");
+            match cmd.name {
+                CommandName::UpdateAlarms => update_alarms(cmd.rules),
+                _ => println!("alarm_manager::Unknown command")
             }
-        }
-    }
-
-    fn handle_update_rules(json: serde_json::Value) {
-        if let Some(rules) = json.get("rules").and_then(serde_json::Value::as_array) {
-            let mut rule_objects: Vec<Rule> = Vec::new();
-
-            for rule_json in rules {
-                let rule: Rule =
-                    serde_json::from_value(rule_json.clone()).expect("alarm_manager:Rule deserialization error");
-                rule_objects.push(rule);
-            }
-
-            println!("alarm_manager:{:#?}", rule_objects);
-            update_alarms(rule_objects);
         }
     }
 
     fn update_alarms(rules: Vec<Rule>) {
         let alarms = get_alarms(&rules);
-        println!("alarm_manager:alarms: {:?}", alarms);
+        println!("alarm_manager:updating alarms: {:?}", alarms);
     }
 
     fn get_hours(s: usize, e: usize) -> Vec<usize> {
