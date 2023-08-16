@@ -1,16 +1,13 @@
 mod alarm_manager;
 mod ui_handler {
 
-    use std::sync::{Arc, Mutex};
     use super::alarm_manager::*;
-    use crossbeam_channel::bounded;
     use serde::Deserialize;
-    use serde_json::Value;
     use tauri::AppHandle;
     use tauri::Wry;
     use tokio::sync::mpsc;
     use tokio::sync::mpsc::{Receiver, Sender};
-    use std::thread;
+    use tokio::select;
 
     pub enum CommandName {
         UpdateRules,
@@ -39,38 +36,53 @@ mod ui_handler {
         win_handle: AppHandle<Wry>,
 
         //for managing communication with alarm manager
-        tx: crossbeam_channel::Sender<String>,
-        rx: crossbeam_channel::Receiver<String>,
+        am_tx: Sender<String>,
+        am_rx: Receiver<String>,
     }
 
     impl UiHandler {
-        pub fn new(ui_rx: Receiver<String>, win_handle: AppHandle<Wry>) -> Self {
-            let (tx, rx) = bounded(1);
+        pub async fn new(ui_rx: Receiver<String>, win_handle: AppHandle<Wry>) -> Self {
+            //ui will transmit on am_tx and receive on am_rx
+            //am will receive on rx and transmit on tx
+            let (am_tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel(1);
+            let (tx, am_rx): (Sender<String>, Receiver<String>) = mpsc::channel(1);
 
-            let am = AlarmManager::new(tx.clone(), rx.clone());
-            am.run();
+            let am = AlarmManager::new(tx, rx);
+            am.run().await;
 
             Self {
                 ui_rx,
                 win_handle,
-                tx,
-                rx,
+                am_tx,
+                am_rx,
             }
         }
 
         pub fn run(mut self) {
             tokio::spawn(async move {
                 loop {
-                    match self.ui_rx.recv().await {
-                        //Some(i) => {},
-                        Some(i) => self.handle_command(i),
-                        None => (),
+                    select! {
+                        message1 = self.ui_rx.recv() => {
+                            match message1 {
+                                Some(msg) => {
+                                    println!("Received from UI: {}", msg);
+                                    self.handle_command(msg).await;
+                                },
+                                None => println!("Channel 1 closed"),
+                            }
+                        }
+                        message2 = self.am_rx.recv() => {
+                            match message2 {
+                                Some(msg) => println!("Received from AM: {}", msg),
+                                None => println!("Channel 2 closed"),
+                            }
+                        }
                     }
                 }
             });
         }
 
-        fn handle_command(&self, cmd: String) {
+        async fn handle_command(&self, cmd: String) {
             println!("{:?}", cmd);
 
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&cmd) {
@@ -81,7 +93,7 @@ mod ui_handler {
                         //Some(CommandName::UpdateRules) => handle_update_rules(json),
                         Some(CommandName::UpdateRules) => {
                             println!("handle_update_rules");
-                            self.tx.send(cmd).unwrap();
+                            self.am_tx.send(cmd).await.unwrap();
                         }
                         _ => println!("none"),
                     }

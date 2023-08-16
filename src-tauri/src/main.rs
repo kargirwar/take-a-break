@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -22,7 +23,7 @@ async fn main() {
 
     let handle = app.handle();
     let ui = UiHandler::new(rx, handle);
-    ui.run();
+    ui.await.run();
 
     app.run(|_app_handle, event| match event {
         tauri::RunEvent::ExitRequested { .. } => {
