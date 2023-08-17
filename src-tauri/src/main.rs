@@ -23,7 +23,7 @@ async fn main() {
 
     let handle = app.handle();
     let ui = UiHandler::new(rx, handle);
-    ui.await.run();
+    ui.run();
 
     app.run(|_app_handle, event| match event {
         tauri::RunEvent::ExitRequested { .. } => {

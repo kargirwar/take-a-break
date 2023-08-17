@@ -1,9 +1,13 @@
+mod alarm;
 mod alarm_manager {
+
+    use super::alarm::*;
     use crate::CommandName;
     use crate::Command;
     use serde::Deserialize;
     use std::collections::HashMap;
-    use tokio::sync::broadcast::{Receiver, Sender};
+    use tokio::sync::broadcast::Sender as BcastSender;
+    use tokio::sync::broadcast::Receiver as BcastReceiver;
 
     #[derive(Debug, Deserialize, Clone)]
     pub struct Rule {
@@ -15,16 +19,16 @@ mod alarm_manager {
     }
 
     pub struct AlarmManager {
-        tx: Sender<Command>,
-        rx: Receiver<Command>,
+        tx: BcastSender<Command>,
+        rx: BcastReceiver<Command>,
     }
 
     impl AlarmManager {
-        pub fn new(tx: Sender<Command>, rx: Receiver<Command>) -> Self {
+        pub fn new(tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
             Self {tx, rx}
         }
 
-        pub async fn run(mut self) {
+        pub fn run(mut self) {
             println!("alarm_manager:Running AlarmManager");
             tokio::spawn(async move {
                 loop {
@@ -36,18 +40,41 @@ mod alarm_manager {
             });
         }
 
-        fn handle_command(&self, cmd: Command) {
+        fn handle_command(&mut self, cmd: Command) {
             println!("alarm_manager:{:?}", cmd);
             match cmd.name {
-                CommandName::UpdateAlarms => update_alarms(cmd.rules),
+                CommandName::UpdateAlarms => self.update_alarms(cmd.rules),
                 _ => println!("alarm_manager::Unknown command")
             }
         }
-    }
 
-    fn update_alarms(rules: Vec<Rule>) {
-        let alarms = get_alarms(&rules);
-        println!("alarm_manager:updating alarms: {:?}", alarms);
+        fn update_alarms(&mut self, rules: Option<Vec<Rule>>) {
+            if rules.is_none() {
+                return;
+            }
+
+            let rules = rules.unwrap().to_vec();
+
+            //first shut down alarms if any
+            let c = Command{name: CommandName::Shutdown, rules: None};
+            self.tx.send(c).unwrap();
+
+            let alarms = get_alarms(&rules);
+            for (day, hours_map) in &alarms {
+                for (hours, minutes_vec) in hours_map {
+                    for minutes in minutes_vec {
+                        println!("day hours Minute: {} {} {}", day, hours, minutes);
+                        let a = Alarm::new(AlarmTime{
+                            day: day.to_string(),
+                            hours: *hours,
+                            minutes: *minutes
+                        }, self.tx.clone(), self.tx.subscribe());
+
+                        a.run();
+                    }
+                }
+            }
+        }
     }
 
     fn get_hours(s: usize, e: usize) -> Vec<usize> {

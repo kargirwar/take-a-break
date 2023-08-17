@@ -35,7 +35,7 @@ mod ui_handler {
     #[derive(Clone, Debug)]
     pub struct Command {
         pub name: CommandName,
-        pub rules: Vec<Rule>
+        pub rules: Option<Vec<Rule>>,
     }
 
     pub struct UiHandler {
@@ -48,10 +48,10 @@ mod ui_handler {
     }
 
     impl UiHandler {
-        pub async fn new(ui_rx: Receiver<String>, win_handle: AppHandle<Wry>) -> Self {
-            let (am_tx, am_rx): (BcastSender<Command>, BcastReceiver<Command>) = broadcast::channel(1);
+        pub fn new(ui_rx: Receiver<String>, win_handle: AppHandle<Wry>) -> Self {
+            let (am_tx, am_rx): (BcastSender<Command>, BcastReceiver<Command>) = broadcast::channel(500);
             let am = AlarmManager::new(am_tx.clone(), am_tx.subscribe());
-            am.run().await;
+            am.run();
 
             Self {
                 ui_rx,
@@ -77,7 +77,7 @@ mod ui_handler {
                         message2 = self.am_rx.recv() => {
                             match message2 {
                                 Ok(msg) => println!("Received from AM: {:?}", msg),
-                                Err(_) => println!("Channel 2 closed"),
+                                Err(e) => println!("{}", e),
                             }
                         }
                     }
@@ -115,7 +115,7 @@ mod ui_handler {
                 println!("ui_handler:{:#?}", rule_objects);
             }
 
-            let c = Command{name: CommandName::UpdateAlarms, rules: rule_objects};
+            let c = Command{name: CommandName::UpdateAlarms, rules: Some(rule_objects)};
             self.am_tx.send(c).unwrap();
         }
     }
