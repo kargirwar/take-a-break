@@ -21,7 +21,9 @@ tauri = { version = "1.4.0", features = [] }
 soloud = "1"
 plist = "1"
 tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7.8" }
 crossbeam-channel = "0.5"
+chrono = "0.4.0"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

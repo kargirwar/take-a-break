@@ -1,11 +1,20 @@
 mod alarm {
-    use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use crate::ui_handler::alarm_manager::Rule;
     use crate::Command;
     use crate::CommandName;
+    use tokio_util::sync::CancellationToken;
+    use tokio::select;
+    use chrono::Datelike;
+    use chrono::NaiveDate;
+    use chrono::Weekday;
+    use chrono::Duration;
+    use chrono::Days;
+    use chrono::Timelike;
 
+
+    #[derive(Clone, Debug)]
     pub struct AlarmTime {
         pub day: String,
         pub hours: usize,
@@ -16,57 +25,133 @@ mod alarm {
         t: AlarmTime,
         tx: BcastSender<Command>,
         rx: BcastReceiver<Command>,
-        shutdown: Arc<AtomicBool>,
+        token: CancellationToken
     }
 
     impl Alarm {
         pub fn new(t: AlarmTime, tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
-            let shutdown = Arc::new(AtomicBool::new(false));
 
             let s = tx.clone();
-            let shutdown_flag = shutdown.clone();
+            let token = CancellationToken::new();
+            let cloned_token = token.clone();
+            let alarm_time = t.clone();
 
             tokio::spawn(async move {
-                loop {
-                    if shutdown_flag.load(Ordering::Relaxed) {
-                        println!("alarm: stopping alarm thread");
-                        break; // Exit the loop if shutdown flag is set
+
+                //if we are before the alarm time sleep till that 
+                //alarm time.
+                //if we are after the alarm time sleep until the alarm time
+                //next week. 
+                //
+                //In both cases the loop will work on a weekly basis
+                seconds_till_first_alarm(&alarm_time);
+
+                select! {
+                    _ = cloned_token.cancelled() => {
+                        println!("Cancelled");
+                        return;
                     }
-                    tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
-                    s.send(Command{name: CommandName::PlayAlarm, rules: None}).unwrap();
+                    _ = tokio::time::sleep(std::time::Duration::from_secs(5)) => {
+                        s.send(Command{name: CommandName::PlayAlarm1, rules: None}).unwrap();
+                    }
+                }
+
+                //weekly alarm
+                loop {
+                    select! {
+                        _ = cloned_token.cancelled() => {
+                            println!("Cancelled");
+                            break;
+                        }
+                        _ = tokio::time::sleep(std::time::Duration::from_secs(10)) => {
+                            s.send(Command{name: CommandName::PlayAlarm2, rules: None}).unwrap();
+                        }
+                    }
                 }
             });
 
-
-            Self {t, tx, rx, shutdown: Arc::clone(&shutdown),}
+            Self {t, tx, rx, token}
         }
 
         pub fn run(mut self) {
             println!("alarm:Running alarm");
 
-            let shutdown_flag = self.shutdown.clone();
             tokio::spawn(async move {
                 loop {
-                    if shutdown_flag.load(Ordering::Relaxed) {
-                        println!("alarm: stopping command thread");
-                        break; // Exit the loop if shutdown flag is set
-                    }
-
                     match self.rx.recv().await {
-                        Ok(i) => self.handle_command(i),
+                        Ok(i) => {
+                            if i.name == CommandName::Shutdown {
+                                self.token.cancel();
+                                break;
+                            }
+                        },
                         Err(e) => println!("{}", e)
                     };
                 }
             });
         }
+    }
 
-        fn handle_command(&self, cmd: Command) {
-            println!("alarm: handle_command: {:?}", cmd);
-            match cmd.name {
-                CommandName::Shutdown => self.shutdown.store(true, Ordering::Relaxed),
-                CommandName::PlayAlarm => println!("Playing alarm"),
-                _ => ()
+    fn seconds_till_first_alarm(a: &AlarmTime) -> i64 {
+        let now = chrono::offset::Local::now();
+        let today = now.weekday();
+
+        //today's timestamp with the alarm time
+        let target = NaiveDate::from_ymd_opt(now.year(), now.month(), now.day()).
+            unwrap().
+            and_hms_opt(a.hours.try_into().unwrap(), a.minutes.try_into().unwrap(), 0).
+            unwrap();
+
+        if today == get_weekday(&a.day).unwrap() {
+            let d = target - now.naive_local();
+            if d > Duration::zero() {
+                //we are still before alarm time today
+                return d.num_seconds()
             }
+
+            return seconds_till_next_week_alarm(a);
+        } else {
+            return seconds_till_next_week_alarm(a);
+        }
+    }
+
+    fn seconds_till_next_week_alarm(a: &AlarmTime) -> i64 {
+        let now = chrono::offset::Local::now();
+        let today = now.weekday() as i32;
+        let sunday = Weekday::Sun as i32;
+        let alarm_day = get_weekday(&a.day).unwrap() as i32;
+
+        let mut days_to_advance = /*days upto sunday*/ (sunday - today) + 1 /*sun-mon*/ + alarm_day;
+        days_to_advance = days_to_advance % 7;
+
+        println!("days_to_advance: {}", days_to_advance);
+
+        //today's timestamp with the alarm time
+        let mut target = NaiveDate::from_ymd_opt(now.year(), now.month(), now.day()).
+            unwrap().
+            and_hms_opt(a.hours.try_into().unwrap(), a.minutes.try_into().unwrap(), 0).
+            unwrap();
+
+        //advance to appropriate day
+        target = target + Days::new(days_to_advance.try_into().unwrap());
+        target = target.with_hour(a.hours.try_into().unwrap()).unwrap();
+        target = target.with_minute(a.minutes.try_into().unwrap()).unwrap();
+
+        //calculate seconds till the next week alaram time from now
+        let d = target - now.naive_local();
+        return d.num_seconds();
+    } 
+
+    fn get_weekday(d: &str) -> Result<Weekday, String> {
+        match d {
+            "Mon" => Ok(Weekday::Mon),
+            "Tue" => Ok(Weekday::Tue),
+            "Wed" => Ok(Weekday::Wed),
+            "Thu" => Ok(Weekday::Thu),
+            "Fri" => Ok(Weekday::Fri),
+            "Sat" => Ok(Weekday::Sat),
+            "Sun" => Ok(Weekday::Sun),
+            _ => Err("Invalid weekday input".to_string()),
         }
     }
 }

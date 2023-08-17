@@ -10,7 +10,7 @@ mod ui_handler {
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use tokio::sync::mpsc::{Receiver};
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq)]
     pub enum CommandName {
         //from the UI
         UpdateRules,
@@ -21,6 +21,8 @@ mod ui_handler {
         PlayAlarm, //received from alarm module
         //For the UI handler
         NextAlarm, //from alarm manager to ui handler
+        PlayAlarm1, //received from alarm module
+        PlayAlarm2, //received from alarm module
     }
 
     impl CommandName {
