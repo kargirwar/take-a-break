@@ -1,6 +1,7 @@
 mod alarm;
 mod alarm_manager {
 
+    use crate::player::play;
     use super::alarm::*;
     use crate::CommandName;
     use crate::Command;
@@ -44,6 +45,9 @@ mod alarm_manager {
             println!("alarm_manager:{:?}", cmd);
             match cmd.name {
                 CommandName::UpdateAlarms => self.update_alarms(cmd.rules),
+                CommandName::PlayAlarm => {
+                    play();
+                }
                 _ => println!("alarm_manager::Unknown command")
             }
         }

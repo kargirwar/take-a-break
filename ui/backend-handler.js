@@ -11,11 +11,24 @@ class BackendHandler {
     constructor() {
         PubSub.subscribe(Constants.EVENT_RULES_SAVED, (e) => {
             Logger.Log(TAG, JSON.stringify(e.rules));
+            let rules = [
+                {
+                    serial: 1,
+                    days: ["Sat"],
+                    interval: 1,
+                    from: 19,
+                    to: 20,
+                }
+            ];
 
+            //invoke('command', {
+                //"payload": JSON.stringify({
+                    //name: "update-rules",
+                    //rules: e.rules})
             invoke('command', {
                 "payload": JSON.stringify({
                     name: "update-rules",
-                    rules: e.rules})
+                    rules: rules})
             }).then((response) => {
                 //console.log(response);
             });

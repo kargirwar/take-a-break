@@ -21,6 +21,45 @@ class Rules {
         this.$root.querySelector('#add-rule').addEventListener('click', () => {
             let $n = Utils.generateNode(this.ruleTemplate, {});
             $list.append($n);
+
+            //debug
+            [...this.$root.querySelector('.interval').querySelectorAll('option')].forEach((e) => {
+                if (e.value == "10") {
+                    e.selected = true;
+                    e.defaultSelected = true;
+                } else {
+                    e.selected = false;
+                    e.defaultSelected = false;
+                }
+            });
+
+            [...this.$root.querySelectorAll('input[name="days"]')].forEach((e) => {
+                if (e.value == "Sat") {
+                    e.checked = true;
+                } else {
+                    e.checked = false;
+                }
+            });
+
+            [...this.$root.querySelector('.from').querySelectorAll('option')].forEach((e) => {
+                if (e.value == "15") {
+                    e.selected = true;
+                    e.defaultSelected = true;
+                } else {
+                    e.selected = false;
+                    e.defaultSelected = false;
+                }
+            });
+
+            [...this.$root.querySelector('.to').querySelectorAll('option')].forEach((e) => {
+                if (e.value == "16") {
+                    e.selected = true;
+                    e.defaultSelected = true;
+                } else {
+                    e.selected = false;
+                    e.defaultSelected = false;
+                }
+            });
         });
 
         this.$root.addEventListener('click', (e) => {

@@ -4,6 +4,7 @@
 
 mod ui_handler;
 mod utils;
+mod player;
 
 use crate::ui_handler::*;
 use tokio::sync::mpsc;

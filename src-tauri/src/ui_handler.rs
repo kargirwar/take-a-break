@@ -18,11 +18,9 @@ mod ui_handler {
         Shutdown,
         //For alarm manager
         UpdateAlarms,
-        PlayAlarm, //received from alarm module
         //For the UI handler
         NextAlarm, //from alarm manager to ui handler
-        PlayAlarm1, //received from alarm module
-        PlayAlarm2, //received from alarm module
+        PlayAlarm, //received from alarm module
     }
 
     impl CommandName {

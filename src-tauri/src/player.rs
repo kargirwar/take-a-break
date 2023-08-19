@@ -6,6 +6,11 @@ mod player {
     pub fn play() {
         thread::spawn(|| {
             println!("{:?}", is_locked());
+            match is_locked() {
+                LockedState::Locked => return,
+                _ => ()
+            }
+
             let mut sl = Soloud::default().unwrap();
             sl.set_global_volume(3.0);
 

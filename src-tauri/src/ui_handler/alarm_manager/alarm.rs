@@ -12,6 +12,7 @@ mod alarm {
     use chrono::Duration;
     use chrono::Days;
     use chrono::Timelike;
+    use std::fmt;
 
 
     #[derive(Clone, Debug)]
@@ -21,10 +22,10 @@ mod alarm {
         pub minutes: usize
     }
 
-    pub struct Alarm {
-        t: AlarmTime,
-        tx: BcastSender<Command>,
-        rx: BcastReceiver<Command>,
+	pub struct Alarm {
+		t: AlarmTime,
+		tx: BcastSender<Command>,
+		rx: BcastReceiver<Command>,
         token: CancellationToken
     }
 
@@ -44,17 +45,19 @@ mod alarm {
                 //next week. 
                 //
                 //In both cases the loop will work on a weekly basis
-                seconds_till_first_alarm(&alarm_time);
+                let seconds = seconds_till_first_alarm(&alarm_time);
 
                 select! {
                     _ = cloned_token.cancelled() => {
                         println!("Cancelled");
                         return;
                     }
-                    _ = tokio::time::sleep(std::time::Duration::from_secs(5)) => {
-                        s.send(Command{name: CommandName::PlayAlarm1, rules: None}).unwrap();
+                    _ = tokio::time::sleep(std::time::Duration::from_secs(seconds.try_into().unwrap())) => {
+                        s.send(Command{name: CommandName::PlayAlarm, rules: None}).unwrap();
                     }
                 }
+
+                let week_seconds = 7 * 24 * 60 * 60;
 
                 //weekly alarm
                 loop {
@@ -63,8 +66,8 @@ mod alarm {
                             println!("Cancelled");
                             break;
                         }
-                        _ = tokio::time::sleep(std::time::Duration::from_secs(10)) => {
-                            s.send(Command{name: CommandName::PlayAlarm2, rules: None}).unwrap();
+                        _ = tokio::time::sleep(std::time::Duration::from_secs(week_seconds.try_into().unwrap())) => {
+                            s.send(Command{name: CommandName::PlayAlarm, rules: None}).unwrap();
                         }
                     }
                 }
@@ -121,10 +124,10 @@ mod alarm {
         let sunday = Weekday::Sun as i32;
         let alarm_day = get_weekday(&a.day).unwrap() as i32;
 
-        let mut days_to_advance = /*days upto sunday*/ (sunday - today) + 1 /*sun-mon*/ + alarm_day;
+        let mut days_to_advance = /*days upto sunday*/ (sunday - today) + alarm_day;
+        println!("days_to_advance : {}", days_to_advance);
         days_to_advance = days_to_advance % 7;
-
-        println!("days_to_advance: {}", days_to_advance);
+        days_to_advance += 1;
 
         //today's timestamp with the alarm time
         let mut target = NaiveDate::from_ymd_opt(now.year(), now.month(), now.day()).
@@ -137,10 +140,12 @@ mod alarm {
         target = target.with_hour(a.hours.try_into().unwrap()).unwrap();
         target = target.with_minute(a.minutes.try_into().unwrap()).unwrap();
 
+        println!("{:?}", target);
+
         //calculate seconds till the next week alaram time from now
         let d = target - now.naive_local();
         return d.num_seconds();
-    } 
+    }
 
     fn get_weekday(d: &str) -> Result<Weekday, String> {
         match d {
@@ -154,6 +159,18 @@ mod alarm {
             _ => Err("Invalid weekday input".to_string()),
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test() {
+            //TODO: How to test??
+            let a = AlarmTime{day: "Sun".to_string(), hours: 0, minutes: 0};
+            assert_eq!(seconds_till_first_alarm(&a), 500);
+        }
+    }   
 }
 
 pub use alarm::*;
