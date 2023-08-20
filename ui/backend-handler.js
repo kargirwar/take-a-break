@@ -14,10 +14,10 @@ class BackendHandler {
             let rules = [
                 {
                     serial: 1,
-                    days: ["Sat"],
-                    interval: 1,
-                    from: 19,
-                    to: 20,
+                    days: ["Sun"],
+                    interval: 20,
+                    from: 16,
+                    to: 17,
                 }
             ];
 
@@ -29,6 +29,9 @@ class BackendHandler {
                 "payload": JSON.stringify({
                     name: "update-rules",
                     rules: rules})
+                //"payload": JSON.stringify({
+                    //name: "update-rules",
+                    //rules: e.rules})
             }).then((response) => {
                 //console.log(response);
             });

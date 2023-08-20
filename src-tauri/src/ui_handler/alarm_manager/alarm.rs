@@ -13,6 +13,7 @@ mod alarm {
     use chrono::Days;
     use chrono::Timelike;
     use std::fmt;
+    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
 
 
     #[derive(Clone, Debug)]
@@ -46,10 +47,11 @@ mod alarm {
                 //
                 //In both cases the loop will work on a weekly basis
                 let seconds = seconds_till_first_alarm(&alarm_time);
+                debug!("{:?}:Sleeping initially for {}", alarm_time, seconds);
 
                 select! {
                     _ = cloned_token.cancelled() => {
-                        println!("Cancelled");
+                        debug!("{:?}:Cancelled initial", alarm_time);
                         return;
                     }
                     _ = tokio::time::sleep(std::time::Duration::from_secs(seconds.try_into().unwrap())) => {
@@ -63,7 +65,7 @@ mod alarm {
                 loop {
                     select! {
                         _ = cloned_token.cancelled() => {
-                            println!("Cancelled");
+                            debug!("{:?}:Cancelled weekly", alarm_time);
                             break;
                         }
                         _ = tokio::time::sleep(std::time::Duration::from_secs(week_seconds.try_into().unwrap())) => {
@@ -77,8 +79,6 @@ mod alarm {
         }
 
         pub fn run(mut self) {
-            println!("alarm:Running alarm");
-
             tokio::spawn(async move {
                 loop {
                     match self.rx.recv().await {
@@ -88,7 +88,7 @@ mod alarm {
                                 break;
                             }
                         },
-                        Err(e) => println!("{}", e)
+                        Err(e) => debug!("{}", e)
                     };
                 }
             });
@@ -125,7 +125,7 @@ mod alarm {
         let alarm_day = get_weekday(&a.day).unwrap() as i32;
 
         let mut days_to_advance = /*days upto sunday*/ (sunday - today) + alarm_day;
-        println!("days_to_advance : {}", days_to_advance);
+        debug!("{:?}:days_to_advance : {}", a, days_to_advance);
         days_to_advance = days_to_advance % 7;
         days_to_advance += 1;
 
@@ -140,7 +140,7 @@ mod alarm {
         target = target.with_hour(a.hours.try_into().unwrap()).unwrap();
         target = target.with_minute(a.minutes.try_into().unwrap()).unwrap();
 
-        println!("{:?}", target);
+        debug!("{:?}:target: {}", a, target);
 
         //calculate seconds till the next week alaram time from now
         let d = target - now.naive_local();

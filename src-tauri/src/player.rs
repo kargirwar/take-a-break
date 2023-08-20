@@ -2,10 +2,11 @@ mod player {
     use crate::utils::*;
     use soloud::*;
     use std::thread;
+    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
 
     pub fn play() {
         thread::spawn(|| {
-            println!("{:?}", is_locked());
+            debug!("{:?}", is_locked());
             match is_locked() {
                 LockedState::Locked => return,
                 _ => ()

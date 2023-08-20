@@ -9,6 +9,7 @@ mod ui_handler {
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use tokio::sync::mpsc::{Receiver};
+    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
 
     #[derive(Clone, Debug, PartialEq)]
     pub enum CommandName {
@@ -68,16 +69,16 @@ mod ui_handler {
                         message1 = self.ui_rx.recv() => {
                             match message1 {
                                 Some(msg) => {
-                                    println!("Received from UI: {}", msg);
+                                    debug!("Received from UI: {}", msg);
                                     self.handle_command(msg);
                                 },
-                                None => println!("Channel 1 closed"),
+                                None => debug!("Channel 1 closed"),
                             }
                         }
                         message2 = self.am_rx.recv() => {
                             match message2 {
-                                Ok(msg) => println!("Received from AM: {:?}", msg),
-                                Err(e) => println!("{}", e),
+                                Ok(msg) => debug!("Received from AM: {:?}", msg),
+                                Err(e) => debug!("{}", e),
                             }
                         }
                     }
@@ -92,13 +93,13 @@ mod ui_handler {
                         Some(CommandName::UpdateRules) => {
                             self.handle_update_rules(json);
                         }
-                        _ => println!("ui_handler::Unknown command"),
+                        _ => debug!("ui_handler::Unknown command"),
                     }
                 } else {
-                    println!("ui_handler: No 'name' field or not a string in the JSON object.");
+                    debug!("ui_handler: No 'name' field or not a string in the JSON object.");
                 }
             } else {
-                eprintln!("ui_handler: Error while parsing JSON");
+                debug!("ui_handler: Error while parsing JSON");
             }
         }
 
@@ -112,7 +113,7 @@ mod ui_handler {
                     rule_objects.push(rule);
                 }
 
-                println!("ui_handler:{:#?}", rule_objects);
+                debug!("ui_handler:{:#?}", rule_objects);
             }
 
             let c = Command{name: CommandName::UpdateAlarms, rules: Some(rule_objects)};

@@ -9,6 +9,7 @@ mod alarm_manager {
     use std::collections::HashMap;
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
+    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
 
     #[derive(Debug, Deserialize, Clone)]
     pub struct Rule {
@@ -30,25 +31,25 @@ mod alarm_manager {
         }
 
         pub fn run(mut self) {
-            println!("alarm_manager:Running AlarmManager");
+            debug!("alarm_manager:Running AlarmManager");
             tokio::spawn(async move {
                 loop {
                     match self.rx.recv().await {
                         Ok(i) => self.handle_command(i),
-                        Err(e) => println!("{}", e)
+                        Err(e) => debug!("{}", e)
                     };
                 }
             });
         }
 
         fn handle_command(&mut self, cmd: Command) {
-            println!("alarm_manager:{:?}", cmd);
+            debug!("alarm_manager:{:?}", cmd);
             match cmd.name {
                 CommandName::UpdateAlarms => self.update_alarms(cmd.rules),
                 CommandName::PlayAlarm => {
                     play();
                 }
-                _ => println!("alarm_manager::Unknown command")
+                _ => debug!("alarm_manager::Unknown command")
             }
         }
 
@@ -67,7 +68,7 @@ mod alarm_manager {
             for (day, hours_map) in &alarms {
                 for (hours, minutes_vec) in hours_map {
                     for minutes in minutes_vec {
-                        println!("day hours Minute: {} {} {}", day, hours, minutes);
+                        debug!("day hours Minute: {} {} {}", day, hours, minutes);
                         let a = Alarm::new(AlarmTime{
                             day: day.to_string(),
                             hours: *hours,
@@ -127,7 +128,7 @@ mod alarm_manager {
                             }
 
                             alarms.get_mut(d).unwrap().insert(h, mins.clone());
-                            println!("{} h: {} mins: {:?}", d, h, mins);
+                            debug!("{} h: {} mins: {:?}", d, h, mins);
 
                             i += 1;
                             break;
@@ -140,7 +141,7 @@ mod alarm_manager {
                                 .get_mut(d)
                                 .unwrap()
                                 .insert(e, vec![0]);
-                            println!("{} h: {} mins: {:?}", d, e, alarms[d].get(&e).unwrap());
+                            debug!("{} h: {} mins: {:?}", d, e, alarms[d].get(&e).unwrap());
                         }
                         break;
                     }
@@ -149,6 +150,19 @@ mod alarm_manager {
         }
 
         alarms
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test() {
+            let rule = Rule{serial: 1, days: vec!["Sun".to_string()], interval: 10, from: 16, to: 17};
+            let rules = vec![rule];
+            let alarms = get_alarms(&rules);
+            assert!(alarms.contains_key("Sun"));
+        }
     }
 }
 

@@ -9,9 +9,12 @@ mod player;
 use crate::ui_handler::*;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
+use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
 
 #[tokio::main]
 async fn main() {
+    utils::setup_logger();
+    debug!("Starting up!");
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel(10);
 
     tauri::async_runtime::set(tokio::runtime::Handle::current());
