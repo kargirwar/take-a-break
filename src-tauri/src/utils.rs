@@ -4,7 +4,7 @@ mod utils {
     use std::io::Cursor;
     use std::process::Command;
 
-    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+    use log::{LevelFilter};
     use log4rs::{
         append::{
             console::{ConsoleAppender, Target},

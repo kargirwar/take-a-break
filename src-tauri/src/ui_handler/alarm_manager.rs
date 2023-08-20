@@ -9,7 +9,7 @@ mod alarm_manager {
     use std::collections::HashMap;
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
-    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+    use log::{debug};
 
     #[derive(Debug, Deserialize, Clone)]
     pub struct Rule {
@@ -98,7 +98,7 @@ mod alarm_manager {
         let mut alarms: HashMap<String, HashMap<usize, Vec<usize>>> = HashMap::new();
 
         for r in rules {
-            let mut hours: HashMap<usize, Vec<usize>> = HashMap::new();
+            let hours: HashMap<usize, Vec<usize>> = HashMap::new();
 
             for d in &r.days {
                 alarms.insert(d.clone(), hours.clone());
@@ -110,7 +110,7 @@ mod alarm_manager {
 
                 let mut i = 0;
                 let mut m = f;
-                let mut h = 0;
+                let mut h;
 
                 loop {
                     let mut mins = Vec::new();
@@ -157,10 +157,11 @@ mod alarm_manager {
         use super::*;
 
         #[test]
-        fn test() {
-            let rule = Rule{serial: 1, days: vec!["Sun".to_string()], interval: 10, from: 16, to: 17};
+        fn test_get_alarms() {
+            let rule = Rule{serial: 1, days: vec!["Sun".to_string()], interval: 25, from: 16, to: 18};
             let rules = vec![rule];
             let alarms = get_alarms(&rules);
+            println!("{:?}", alarms);
             assert!(alarms.contains_key("Sun"));
         }
     }

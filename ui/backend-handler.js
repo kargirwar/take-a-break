@@ -26,12 +26,12 @@ class BackendHandler {
                     //name: "update-rules",
                     //rules: e.rules})
             invoke('command', {
-                "payload": JSON.stringify({
-                    name: "update-rules",
-                    rules: rules})
                 //"payload": JSON.stringify({
                     //name: "update-rules",
-                    //rules: e.rules})
+                    //rules: rules})
+                "payload": JSON.stringify({
+                    name: "update-rules",
+                    rules: e.rules})
             }).then((response) => {
                 //console.log(response);
             });

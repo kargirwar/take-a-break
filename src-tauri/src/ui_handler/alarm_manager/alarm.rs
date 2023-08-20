@@ -1,7 +1,6 @@
 mod alarm {
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
-    use crate::ui_handler::alarm_manager::Rule;
     use crate::Command;
     use crate::CommandName;
     use tokio_util::sync::CancellationToken;
@@ -12,8 +11,7 @@ mod alarm {
     use chrono::Duration;
     use chrono::Days;
     use chrono::Timelike;
-    use std::fmt;
-    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+    use log::{debug};
 
 
     #[derive(Clone, Debug)]

@@ -9,7 +9,7 @@ mod ui_handler {
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use tokio::sync::mpsc::{Receiver};
-    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+    use log::{debug};
 
     #[derive(Clone, Debug, PartialEq)]
     pub enum CommandName {

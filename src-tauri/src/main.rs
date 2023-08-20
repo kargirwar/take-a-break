@@ -9,7 +9,7 @@ mod player;
 use crate::ui_handler::*;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
-use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+use log::{debug};
 
 #[tokio::main]
 async fn main() {

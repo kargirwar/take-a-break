@@ -2,7 +2,7 @@ mod player {
     use crate::utils::*;
     use soloud::*;
     use std::thread;
-    use log::{debug, error, info, trace, warn, LevelFilter, SetLoggerError};
+    use log::{debug};
 
     pub fn play() {
         thread::spawn(|| {
