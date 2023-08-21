@@ -15,8 +15,8 @@ class Constants {
 		return 'page-rules';
     }
 
-    static get EVENT_RULES_SAVED() {
-		return 'event-rules-saved';
+    static get EVENT_RULES_UPDATED() {
+		return 'event-rules-updated';
     }
 }
 

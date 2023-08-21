@@ -9,7 +9,7 @@ const { invoke } = window.__TAURI__.tauri;
 
 class BackendHandler {
     constructor() {
-        PubSub.subscribe(Constants.EVENT_RULES_SAVED, (e) => {
+        PubSub.subscribe(Constants.EVENT_RULES_UPDATED, (e) => {
             Logger.Log(TAG, JSON.stringify(e.rules));
             let rules = [
                 {

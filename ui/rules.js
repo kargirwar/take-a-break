@@ -71,6 +71,10 @@ class Rules {
                 this.rules = this.getRules();
                 //this is necessary so that dom is in step with the object in memory
                 this.updateSerial();
+
+                PubSub.publish(Constants.EVENT_RULES_UPDATED, {
+                    rules: this.rules
+                });
             }
         });
 
@@ -78,7 +82,10 @@ class Rules {
             let $n = e.target;
             if ($n.classList.contains('save-rule')) {
                 this.saveRule($n.parentElement, parseInt(e.target.dataset.serial));
-                PubSub.publish(Constants.EVENT_RULES_SAVED, {
+                this.rules = this.getRules();
+                this.updateSerial();
+
+                PubSub.publish(Constants.EVENT_RULES_UPDATED, {
                     rules: this.rules
                 });
             }
@@ -135,8 +142,6 @@ class Rules {
         Utils.info("Saved", 2000);
         $r.style.borderColor = 'grey';
         $r.querySelector('.save-rule').style.display = 'none';
-
-        this.rules = this.getRules();
 
         return;
     }

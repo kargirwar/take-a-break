@@ -124,9 +124,10 @@ mod alarm {
         let alarm_day = get_weekday(&a.day).unwrap() as i32;
 
         let mut days_to_advance = /*days upto sunday*/ (sunday - today) + alarm_day;
-        debug!("{:?}:days_to_advance : {}", a, days_to_advance);
         days_to_advance = days_to_advance % 7;
         days_to_advance += 1;
+
+        debug!("{:?}:days_to_advance : {}", a, days_to_advance);
 
         //today's timestamp with the alarm time
         let mut target = NaiveDate::from_ymd_opt(now.year(), now.month(), now.day())
