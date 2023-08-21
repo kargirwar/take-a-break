@@ -1,47 +1,44 @@
 mod alarm {
-    use tokio::sync::broadcast::Sender as BcastSender;
-    use tokio::sync::broadcast::Receiver as BcastReceiver;
     use crate::Command;
     use crate::CommandName;
-    use tokio_util::sync::CancellationToken;
-    use tokio::select;
     use chrono::Datelike;
-    use chrono::NaiveDate;
-    use chrono::Weekday;
-    use chrono::Duration;
     use chrono::Days;
+    use chrono::Duration;
+    use chrono::NaiveDate;
     use chrono::Timelike;
-    use log::{debug};
-
+    use chrono::Weekday;
+    use log::debug;
+    use tokio::select;
+    use tokio::sync::broadcast::Receiver as BcastReceiver;
+    use tokio::sync::broadcast::Sender as BcastSender;
+    use tokio_util::sync::CancellationToken;
 
     #[derive(Clone, Debug)]
     pub struct AlarmTime {
         pub day: String,
         pub hours: usize,
-        pub minutes: usize
+        pub minutes: usize,
     }
 
-	pub struct Alarm {
-		t: AlarmTime,
-		tx: BcastSender<Command>,
-		rx: BcastReceiver<Command>,
-        token: CancellationToken
+    pub struct Alarm {
+        t: AlarmTime,
+        tx: BcastSender<Command>,
+        rx: BcastReceiver<Command>,
+        token: CancellationToken,
     }
 
     impl Alarm {
         pub fn new(t: AlarmTime, tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
-
             let s = tx.clone();
             let token = CancellationToken::new();
             let cloned_token = token.clone();
             let alarm_time = t.clone();
 
             tokio::spawn(async move {
-
-                //if we are before the alarm time sleep till that 
+                //if we are before the alarm time sleep till that
                 //alarm time.
                 //if we are after the alarm time sleep until the alarm time
-                //next week. 
+                //next week.
                 //
                 //In both cases the loop will work on a weekly basis
                 let seconds = seconds_till_first_alarm(&alarm_time);
@@ -73,7 +70,7 @@ mod alarm {
                 }
             });
 
-            Self {t, tx, rx, token}
+            Self { t, tx, rx, token }
         }
 
         pub fn run(mut self) {
@@ -85,8 +82,8 @@ mod alarm {
                                 self.token.cancel();
                                 break;
                             }
-                        },
-                        Err(e) => debug!("{}", e)
+                        }
+                        Err(e) => debug!("{}", e),
                     };
                 }
             });
@@ -98,16 +95,20 @@ mod alarm {
         let today = now.weekday();
 
         //today's timestamp with the alarm time
-        let target = NaiveDate::from_ymd_opt(now.year(), now.month(), now.day()).
-            unwrap().
-            and_hms_opt(a.hours.try_into().unwrap(), a.minutes.try_into().unwrap(), 0).
-            unwrap();
+        let target = NaiveDate::from_ymd_opt(now.year(), now.month(), now.day())
+            .unwrap()
+            .and_hms_opt(
+                a.hours.try_into().unwrap(),
+                a.minutes.try_into().unwrap(),
+                0,
+            )
+            .unwrap();
 
         if today == get_weekday(&a.day).unwrap() {
             let d = target - now.naive_local();
             if d > Duration::zero() {
                 //we are still before alarm time today
-                return d.num_seconds()
+                return d.num_seconds();
             }
 
             return seconds_till_next_week_alarm(a);
@@ -128,10 +129,14 @@ mod alarm {
         days_to_advance += 1;
 
         //today's timestamp with the alarm time
-        let mut target = NaiveDate::from_ymd_opt(now.year(), now.month(), now.day()).
-            unwrap().
-            and_hms_opt(a.hours.try_into().unwrap(), a.minutes.try_into().unwrap(), 0).
-            unwrap();
+        let mut target = NaiveDate::from_ymd_opt(now.year(), now.month(), now.day())
+            .unwrap()
+            .and_hms_opt(
+                a.hours.try_into().unwrap(),
+                a.minutes.try_into().unwrap(),
+                0,
+            )
+            .unwrap();
 
         //advance to appropriate day
         target = target + Days::new(days_to_advance.try_into().unwrap());
@@ -165,10 +170,14 @@ mod alarm {
         #[test]
         fn test() {
             //TODO: How to test??
-            let a = AlarmTime{day: "Sun".to_string(), hours: 0, minutes: 0};
+            let a = AlarmTime {
+                day: "Sun".to_string(),
+                hours: 0,
+                minutes: 0,
+            };
             assert_eq!(seconds_till_first_alarm(&a), 500);
         }
-    }   
+    }
 }
 
 pub use alarm::*;

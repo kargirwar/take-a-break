@@ -2,14 +2,16 @@ mod alarm_manager;
 mod ui_handler {
 
     use super::alarm_manager::*;
+    use log::debug;
     use tauri::AppHandle;
     use tauri::Wry;
     use tokio::select;
     use tokio::sync::broadcast;
-    use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
-    use tokio::sync::mpsc::{Receiver};
-    use log::{debug};
+    use tokio::sync::broadcast::Sender as BcastSender;
+    use tokio::sync::mpsc::Receiver;
+
+    const BCAST_CHANNEL_SIZE: usize = 10;
 
     #[derive(Clone, Debug, PartialEq)]
     pub enum CommandName {
@@ -50,7 +52,8 @@ mod ui_handler {
 
     impl UiHandler {
         pub fn new(ui_rx: Receiver<String>, win_handle: AppHandle<Wry>) -> Self {
-            let (am_tx, am_rx): (BcastSender<Command>, BcastReceiver<Command>) = broadcast::channel(500);
+            let (am_tx, am_rx): (BcastSender<Command>, BcastReceiver<Command>) =
+                broadcast::channel(BCAST_CHANNEL_SIZE);
             let am = AlarmManager::new(am_tx.clone(), am_tx.subscribe());
             am.run();
 
@@ -108,15 +111,18 @@ mod ui_handler {
 
             if let Some(rules) = json.get("rules").and_then(serde_json::Value::as_array) {
                 for rule_json in rules {
-                    let rule: Rule =
-                        serde_json::from_value(rule_json.clone()).expect("ui_handler:Rule deserialization error");
+                    let rule: Rule = serde_json::from_value(rule_json.clone())
+                        .expect("ui_handler:Rule deserialization error");
                     rule_objects.push(rule);
                 }
 
                 debug!("ui_handler:{:#?}", rule_objects);
             }
 
-            let c = Command{name: CommandName::UpdateAlarms, rules: Some(rule_objects)};
+            let c = Command {
+                name: CommandName::UpdateAlarms,
+                rules: Some(rule_objects),
+            };
             self.am_tx.send(c).unwrap();
         }
     }

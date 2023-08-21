@@ -1,15 +1,15 @@
 mod alarm;
 mod alarm_manager {
 
-    use crate::player::play;
     use super::alarm::*;
-    use crate::CommandName;
+    use crate::player::play;
     use crate::Command;
+    use crate::CommandName;
+    use log::debug;
     use serde::Deserialize;
     use std::collections::HashMap;
-    use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
-    use log::{debug};
+    use tokio::sync::broadcast::Sender as BcastSender;
 
     #[derive(Debug, Deserialize, Clone)]
     pub struct Rule {
@@ -27,7 +27,7 @@ mod alarm_manager {
 
     impl AlarmManager {
         pub fn new(tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
-            Self {tx, rx}
+            Self { tx, rx }
         }
 
         pub fn run(mut self) {
@@ -36,7 +36,7 @@ mod alarm_manager {
                 loop {
                     match self.rx.recv().await {
                         Ok(i) => self.handle_command(i),
-                        Err(e) => debug!("{}", e)
+                        Err(e) => debug!("{}", e),
                     };
                 }
             });
@@ -49,7 +49,7 @@ mod alarm_manager {
                 CommandName::PlayAlarm => {
                     play();
                 }
-                _ => debug!("alarm_manager::Unknown command")
+                _ => debug!("alarm_manager::Unknown command"),
             }
         }
 
@@ -61,7 +61,10 @@ mod alarm_manager {
             let rules = rules.unwrap().to_vec();
 
             //first shut down alarms if any
-            let c = Command{name: CommandName::Shutdown, rules: None};
+            let c = Command {
+                name: CommandName::Shutdown,
+                rules: None,
+            };
             self.tx.send(c).unwrap();
 
             let alarms = get_alarms(&rules);
@@ -69,11 +72,15 @@ mod alarm_manager {
                 for (hours, minutes_vec) in hours_map {
                     for minutes in minutes_vec {
                         debug!("day hours Minute: {} {} {}", day, hours, minutes);
-                        let a = Alarm::new(AlarmTime{
-                            day: day.to_string(),
-                            hours: *hours,
-                            minutes: *minutes
-                        }, self.tx.clone(), self.tx.subscribe());
+                        let a = Alarm::new(
+                            AlarmTime {
+                                day: day.to_string(),
+                                hours: *hours,
+                                minutes: *minutes,
+                            },
+                            self.tx.clone(),
+                            self.tx.subscribe(),
+                        );
 
                         a.run();
                     }
@@ -137,10 +144,7 @@ mod alarm_manager {
 
                     if e == hrs[i] {
                         if m % 60 == 0 {
-                            alarms
-                                .get_mut(d)
-                                .unwrap()
-                                .insert(e, vec![0]);
+                            alarms.get_mut(d).unwrap().insert(e, vec![0]);
                             debug!("{} h: {} mins: {:?}", d, e, alarms[d].get(&e).unwrap());
                         }
                         break;
@@ -158,7 +162,13 @@ mod alarm_manager {
 
         #[test]
         fn test_get_alarms() {
-            let rule = Rule{serial: 1, days: vec!["Sun".to_string()], interval: 25, from: 16, to: 18};
+            let rule = Rule {
+                serial: 1,
+                days: vec!["Sun".to_string()],
+                interval: 25,
+                from: 16,
+                to: 18,
+            };
             let rules = vec![rule];
             let alarms = get_alarms(&rules);
             println!("{:?}", alarms);

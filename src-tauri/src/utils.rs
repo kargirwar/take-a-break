@@ -4,7 +4,7 @@ mod utils {
     use std::io::Cursor;
     use std::process::Command;
 
-    use log::{LevelFilter};
+    use log::LevelFilter;
     use log4rs::{
         append::{
             console::{ConsoleAppender, Target},
@@ -84,7 +84,9 @@ mod utils {
 
         // Logging to log file.
         let logfile = FileAppender::builder()
-            .encoder(Box::new(PatternEncoder::new("{d(%Y-%m-%d %H:%M:%S%.3f)} [{l}] - {m}{n}")))
+            .encoder(Box::new(PatternEncoder::new(
+                "{d(%Y-%m-%d %H:%M:%S%.3f)} [{l}] - {m}{n}",
+            )))
             .build(file_path)
             .unwrap();
 
@@ -94,15 +96,15 @@ mod utils {
             .appender(Appender::builder().build("logfile", Box::new(logfile)))
             .appender(
                 Appender::builder()
-                .filter(Box::new(ThresholdFilter::new(level)))
-                .build("stderr", Box::new(stderr)),
-                )
+                    .filter(Box::new(ThresholdFilter::new(level)))
+                    .build("stderr", Box::new(stderr)),
+            )
             .build(
                 Root::builder()
-                .appender("logfile")
-                .appender("stderr")
-                .build(LevelFilter::Debug),
-                )
+                    .appender("logfile")
+                    .appender("stderr")
+                    .build(LevelFilter::Debug),
+            )
             .unwrap();
 
         // Use this to change log levels at runtime.

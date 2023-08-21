@@ -2,14 +2,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod player;
 mod ui_handler;
 mod utils;
-mod player;
 
 use crate::ui_handler::*;
+use log::debug;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
-use log::{debug};
 
 #[tokio::main]
 async fn main() {
