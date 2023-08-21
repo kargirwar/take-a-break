@@ -8,14 +8,13 @@ mod player {
     const POLL_INTERVAL: u64 = 100;
 
     pub fn play() {
-        for _ in 0..10 {
-            thread::spawn(|| {
-                debug!("{:?}", is_locked());
-                match is_locked() {
-                    LockedState::Locked => return,
-                    _ => (),
-                }
+        match is_locked() {
+            LockedState::Locked => return,
+            _ => (),
+        }
 
+        for _ in 0..3 {
+            thread::spawn(|| {
                 let mut sl = Soloud::default().unwrap();
                 sl.set_global_volume(3.0);
 

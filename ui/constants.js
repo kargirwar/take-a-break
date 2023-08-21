@@ -18,6 +18,10 @@ class Constants {
     static get EVENT_RULES_UPDATED() {
 		return 'event-rules-updated';
     }
+
+    static get EVENT_NEXT_ALARM() {
+		return 'event-next-alarm';
+    }
 }
 
 export { Constants }

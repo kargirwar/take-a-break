@@ -3,7 +3,11 @@ mod ui_handler {
 
     use super::alarm_manager::*;
     use log::debug;
+    use once_cell::race::OnceBool;
+    use serde_json::json;
+    use std::fmt;
     use tauri::AppHandle;
+    use tauri::Manager;
     use tauri::Wry;
     use tokio::select;
     use tokio::sync::broadcast;
@@ -12,6 +16,27 @@ mod ui_handler {
     use tokio::sync::mpsc::Receiver;
 
     const BCAST_CHANNEL_SIZE: usize = 10;
+    static INITIALIZED: OnceBool = OnceBool::new();
+
+    #[derive(Clone, Debug)]
+    pub struct AlarmTime {
+        pub day: String,
+        pub hours: usize,
+        pub minutes: usize,
+    }
+
+    impl fmt::Display for AlarmTime {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}-{}-{}", self.day, self.hours, self.minutes)
+        }
+    }
+
+    #[derive(Clone, Debug)]
+    pub enum Payload {
+        Rules(Vec<Rule>),
+        Alarms((AlarmTime, AlarmTime)),
+        None,
+    }
 
     #[derive(Clone, Debug, PartialEq)]
     pub enum CommandName {
@@ -35,10 +60,19 @@ mod ui_handler {
         }
     }
 
+    impl fmt::Display for CommandName {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                CommandName::NextAlarm => write!(f, "event-next-alarm"),
+                _ => write!(f, "not-implemented"),
+            }
+        }
+    }
+
     #[derive(Clone, Debug)]
     pub struct Command {
         pub name: CommandName,
-        pub rules: Option<Vec<Rule>>,
+        pub payload: Payload,
     }
 
     pub struct UiHandler {
@@ -73,14 +107,14 @@ mod ui_handler {
                             match message1 {
                                 Some(msg) => {
                                     debug!("Received from UI: {}", msg);
-                                    self.handle_command(msg);
+                                    self.handle_ui_command(msg);
                                 },
                                 None => debug!("Channel 1 closed"),
                             }
                         }
                         message2 = self.am_rx.recv() => {
                             match message2 {
-                                Ok(msg) => debug!("Received from AM: {:?}", msg),
+                                Ok(msg) => self.handle_am_command(msg),
                                 Err(e) => debug!("{}", e),
                             }
                         }
@@ -89,7 +123,46 @@ mod ui_handler {
             });
         }
 
-        fn handle_command(&self, cmd: String) {
+        fn handle_am_command(&self, cmd: Command) {
+            let payload;
+            if let CommandName::NextAlarm = cmd.name {
+                payload = cmd.payload;
+            } else {
+                return;
+            }
+
+            let init_done = match INITIALIZED.get() {
+                Some(i) => i,
+                None => {
+                    INITIALIZED.set(true).unwrap();
+                    false
+                }
+            };
+
+            debug!("handle_am_command: {:?}", init_done);
+            debug!("handle_am_command: {:?}", payload);
+            match payload {
+                Payload::Alarms(i) => {
+                    let json;
+                    if init_done {
+                        json = json!({
+                            "prev-alarm": i.0.to_string(),
+                            "next-alarm": i.1.to_string()
+                        });
+                    } else {
+                        json = json!({
+                            "next-alarm": i.1.to_string()
+                        });
+                    }
+                    self.win_handle
+                        .emit_all(&CommandName::NextAlarm.to_string(), json.to_string())
+                        .unwrap();
+                }
+                _ => debug!("ui_handler: invalid"),
+            };
+        }
+
+        fn handle_ui_command(&self, cmd: String) {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&cmd) {
                 if let Some(name) = json.get("name").and_then(|n| n.as_str()) {
                     match CommandName::from_str(name) {
@@ -121,7 +194,7 @@ mod ui_handler {
 
             let c = Command {
                 name: CommandName::UpdateAlarms,
-                rules: Some(rule_objects),
+                payload: Payload::Rules(rule_objects),
             };
             self.am_tx.send(c).unwrap();
         }

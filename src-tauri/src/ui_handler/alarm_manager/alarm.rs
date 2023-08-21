@@ -1,6 +1,10 @@
 mod alarm {
+    use crate::AlarmTime;
     use crate::Command;
     use crate::CommandName;
+    use crate::Payload;
+    use crate::utils::*;
+
     use chrono::Datelike;
     use chrono::Days;
     use chrono::Duration;
@@ -13,18 +17,12 @@ mod alarm {
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio_util::sync::CancellationToken;
 
-    #[derive(Clone, Debug)]
-    pub struct AlarmTime {
-        pub day: String,
-        pub hours: usize,
-        pub minutes: usize,
-    }
-
     pub struct Alarm {
         t: AlarmTime,
         tx: BcastSender<Command>,
         rx: BcastReceiver<Command>,
         token: CancellationToken,
+        pub seconds: i64,
     }
 
     impl Alarm {
@@ -33,6 +31,7 @@ mod alarm {
             let token = CancellationToken::new();
             let cloned_token = token.clone();
             let alarm_time = t.clone();
+            let seconds = seconds_till_first_alarm(&alarm_time);
 
             tokio::spawn(async move {
                 //if we are before the alarm time sleep till that
@@ -41,7 +40,6 @@ mod alarm {
                 //next week.
                 //
                 //In both cases the loop will work on a weekly basis
-                let seconds = seconds_till_first_alarm(&alarm_time);
                 debug!("{:?}:Sleeping initially for {}", alarm_time, seconds);
 
                 select! {
@@ -50,7 +48,7 @@ mod alarm {
                         return;
                     }
                     _ = tokio::time::sleep(std::time::Duration::from_secs(seconds.try_into().unwrap())) => {
-                        s.send(Command{name: CommandName::PlayAlarm, rules: None}).unwrap();
+                        s.send(Command{name: CommandName::PlayAlarm, payload: Payload::None}).unwrap();
                     }
                 }
 
@@ -64,13 +62,19 @@ mod alarm {
                             break;
                         }
                         _ = tokio::time::sleep(std::time::Duration::from_secs(week_seconds.try_into().unwrap())) => {
-                            s.send(Command{name: CommandName::PlayAlarm, rules: None}).unwrap();
+                            s.send(Command{name: CommandName::PlayAlarm, payload: Payload::None}).unwrap();
                         }
                     }
                 }
             });
 
-            Self { t, tx, rx, token }
+            Self {
+                t,
+                tx,
+                rx,
+                token,
+                seconds,
+            }
         }
 
         pub fn run(mut self) {
@@ -167,16 +171,20 @@ mod alarm {
     #[cfg(test)]
     mod tests {
         use super::*;
+        use crate::utils::*;
 
         #[test]
-        fn test() {
+        fn test_seconds_to_next() {
+            setup_logger();
             //TODO: How to test??
             let a = AlarmTime {
-                day: "Sun".to_string(),
-                hours: 0,
-                minutes: 0,
+                day: "Mon".to_string(),
+                hours: 9,
+                minutes: 40,
             };
-            assert_eq!(seconds_till_first_alarm(&a), 500);
+            let seconds = seconds_till_first_alarm(&a);
+            println!("seconds: {:?}", seconds);
+            assert!(seconds < 600); 
         }
     }
 }

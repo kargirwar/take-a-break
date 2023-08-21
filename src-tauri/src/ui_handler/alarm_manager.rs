@@ -3,8 +3,11 @@ mod alarm_manager {
 
     use super::alarm::*;
     use crate::player::play;
+    use crate::AlarmTime;
     use crate::Command;
     use crate::CommandName;
+    use crate::Payload;
+
     use log::debug;
     use serde::Deserialize;
     use std::collections::HashMap;
@@ -23,11 +26,20 @@ mod alarm_manager {
     pub struct AlarmManager {
         tx: BcastSender<Command>,
         rx: BcastReceiver<Command>,
+        alarms: Vec<(u64, AlarmTime)>,
+        index: u32,
     }
 
     impl AlarmManager {
         pub fn new(tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
-            Self { tx, rx }
+            let alarms: Vec<(u64, AlarmTime)> = Vec::new();
+            let index = 0;
+            Self {
+                tx,
+                rx,
+                alarms,
+                index,
+            }
         }
 
         pub fn run(mut self) {
@@ -45,25 +57,33 @@ mod alarm_manager {
         fn handle_command(&mut self, cmd: Command) {
             debug!("alarm_manager:{:?}", cmd);
             match cmd.name {
-                CommandName::UpdateAlarms => self.update_alarms(cmd.rules),
+                CommandName::UpdateAlarms => {
+                    self.update_alarms(cmd.payload);
+                    self.notify_next_alarm();
+                }
                 CommandName::PlayAlarm => {
                     play();
+                    self.notify_next_alarm();
                 }
                 _ => debug!("alarm_manager::Unknown command"),
             }
         }
 
-        fn update_alarms(&mut self, rules: Option<Vec<Rule>>) {
-            if rules.is_none() {
+        fn update_alarms(&mut self, payload: Payload) {
+            let rules;
+            if let Payload::Rules(temp) = payload {
+                rules = temp;
+            } else {
                 return;
             }
 
-            let rules = rules.unwrap().to_vec();
+            self.alarms.clear();
+            self.index = 0;
 
             //first shut down alarms if any
             let c = Command {
                 name: CommandName::Shutdown,
-                rules: None,
+                payload: Payload::None,
             };
             self.tx.send(c).unwrap();
 
@@ -71,21 +91,58 @@ mod alarm_manager {
             for (day, hours_map) in &alarms {
                 for (hours, minutes_vec) in hours_map {
                     for minutes in minutes_vec {
-                        debug!("day hours Minute: {} {} {}", day, hours, minutes);
-                        let a = Alarm::new(
-                            AlarmTime {
-                                day: day.to_string(),
-                                hours: *hours,
-                                minutes: *minutes,
-                            },
-                            self.tx.clone(),
-                            self.tx.subscribe(),
-                        );
+                        debug!("Day Hours Minutes: {} {} {}", day, hours, minutes);
 
+                        let t = AlarmTime {
+                            day: day.to_string(),
+                            hours: *hours,
+                            minutes: *minutes,
+                        };
+
+                        let a = Alarm::new(t.clone(), self.tx.clone(), self.tx.subscribe());
+
+                        self.alarms.push((a.seconds.try_into().unwrap(), t));
                         a.run();
                     }
                 }
             }
+
+            //we are sorting the alarms by time from current instance.
+            //By moving through these we will get the next alarmtime
+            //we will wrap around to first after reachin end of vector
+            self.alarms.sort_by_key(|tuple| tuple.0);
+        }
+
+        fn notify_next_alarm(&mut self) {
+            if self.alarms.len() == 0 {
+                return;
+            }
+
+            debug!("alarm_manager::alarms{:?}", self.alarms);
+            debug!("alarm_manager::index{:?}", self.index);
+
+            let alarms = self.get_next_prev_alarms();
+            let c = Command {
+                name: CommandName::NextAlarm,
+                payload: Payload::Alarms(alarms),
+            };
+
+            self.tx.send(c).unwrap();
+            self.index = (self.index + 1) % self.alarms.len() as u32;
+        }
+
+        fn get_next_prev_alarms(&self) -> (AlarmTime, AlarmTime) {
+            let mut p;
+            if self.index == 0 {
+                p = self.alarms.len() as u32 - 1;
+            } else {
+                p = self.index - 1;
+            }
+
+            let a_p = &self.alarms[p as usize].1;
+            let a_n = &self.alarms[self.index as usize].1;
+
+            return (a_p.clone(), a_n.clone());
         }
     }
 
@@ -164,10 +221,10 @@ mod alarm_manager {
         fn test_get_alarms() {
             let rule = Rule {
                 serial: 1,
-                days: vec!["Sun".to_string()],
-                interval: 25,
-                from: 16,
-                to: 18,
+                days: vec!["Mon".to_string()],
+                interval: 10,
+                from: 9,
+                to: 10,
             };
             let rules = vec![rule];
             let alarms = get_alarms(&rules);

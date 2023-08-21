@@ -37,7 +37,7 @@ class BackendHandler {
             });
         });
 
-        appWindow.listen('some_event', (e) => {
+        appWindow.listen(Constants.EVENT_NEXT_ALARM, (e) => {
             Logger.Log(TAG, JSON.stringify(e.payload));
         });
     }
