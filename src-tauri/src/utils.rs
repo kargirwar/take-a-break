@@ -4,6 +4,7 @@ mod utils {
     use std::io::Cursor;
     use std::process::Command;
 
+    use dirs;
     use log::LevelFilter;
     use log4rs::{
         append::{
@@ -14,6 +15,8 @@ mod utils {
         encode::pattern::PatternEncoder,
         filter::threshold::ThresholdFilter,
     };
+    use std::fs;
+    use std::path::PathBuf;
 
     pub enum LockedState {
         Locked,
@@ -77,8 +80,11 @@ mod utils {
 
     pub fn setup_logger() {
         let level = log::LevelFilter::Info;
-        let file_path = "debug.log";
 
+        let file_path = get_log_file_name();
+        if file_path.is_empty() {
+            return;
+        }
         // Build a stderr logger.
         let stderr = ConsoleAppender::builder().target(Target::Stderr).build();
 
@@ -112,6 +118,23 @@ mod utils {
         // if you are trying to debug an issue and need more logs on then turn it off
         // once you are done.
         let _handle = log4rs::init_config(config).unwrap();
+    }
+
+    fn dir_exists(path: &str) -> bool {
+        fs::metadata(path).is_ok()
+    }
+
+    fn get_log_file_name() -> String {
+        if let Some(home_dir) = dirs::home_dir() {
+            let mut path = PathBuf::new();
+            path.push(home_dir);
+            path.push("Library");
+            path.push("TauriTimer");
+            path.push("debug.log");
+            return path.to_string_lossy().to_string();
+        } else {
+            return "".to_string();
+        }
     }
 }
 
