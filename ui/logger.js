@@ -37,7 +37,7 @@ class Logger {
             return;
         }
 
-        Logger.print(tag, str);
+        Logger.print(tag, str ?? "{}");
     }
 
     static print(tag, str) {

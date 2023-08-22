@@ -16,50 +16,10 @@ class Rules {
     load() {
         this.$root.replaceChildren(Utils.generateNode(this.rootTemplate, {}));
         
-        let $list = this.$root.querySelector('#rules-content');
+        this.$list = this.$root.querySelector('#rules-content');
         this.setupTabs();
         this.$root.querySelector('#add-rule').addEventListener('click', () => {
-            let $n = Utils.generateNode(this.ruleTemplate, {});
-            $list.append($n);
-
-            //debug
-            [...this.$root.querySelector('.interval').querySelectorAll('option')].forEach((e) => {
-                if (e.value == "1") {
-                    e.selected = true;
-                    e.defaultSelected = true;
-                } else {
-                    e.selected = false;
-                    e.defaultSelected = false;
-                }
-            });
-
-            [...this.$root.querySelectorAll('input[name="days"]')].forEach((e) => {
-                if (e.value == "Tue") {
-                    e.checked = true;
-                } else {
-                    e.checked = false;
-                }
-            });
-
-            [...this.$root.querySelector('.from').querySelectorAll('option')].forEach((e) => {
-                if (e.value == "10") {
-                    e.selected = true;
-                    e.defaultSelected = true;
-                } else {
-                    e.selected = false;
-                    e.defaultSelected = false;
-                }
-            });
-
-            [...this.$root.querySelector('.to').querySelectorAll('option')].forEach((e) => {
-                if (e.value == "11") {
-                    e.selected = true;
-                    e.defaultSelected = true;
-                } else {
-                    e.selected = false;
-                    e.defaultSelected = false;
-                }
-            });
+            this.addRule();
         });
 
         this.$root.addEventListener('click', (e) => {
@@ -81,13 +41,20 @@ class Rules {
         this.$root.addEventListener('click', (e) => {
             let $n = e.target;
             if ($n.classList.contains('save-rule')) {
-                this.saveRule($n.parentElement, parseInt(e.target.dataset.serial));
+                if (!this.isValid($n.parentElement, parseInt(e.target.dataset.serial))) {
+                    return;
+                }
+
+                this.disableRule($n.parentElement);
+
                 this.rules = this.getRules();
                 this.updateSerial();
 
                 PubSub.publish(Constants.EVENT_RULES_UPDATED, {
                     rules: this.rules
                 });
+
+                Utils.info("Saved", 2000);
             }
         });
 
@@ -99,7 +66,67 @@ class Rules {
         });
 
         //debug
-        document.querySelector('#add-rule').dispatchEvent(new Event('click'));
+        //document.querySelector('#add-rule').dispatchEvent(new Event('click'));
+
+        PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
+            for (let i = 0; i < e.rules.length; i++) {
+                this.addRule(e.rules[i]);
+            }
+
+            this.rules = e.rules;
+            this.updateSerial();
+        });
+    }
+
+    addRule(rule = {}) {
+        let $n = Utils.generateNode(this.ruleTemplate, {});
+        this.$list.append($n);
+
+        if (Utils.isEmpty(rule)) {
+            return;
+        }
+
+        $n = this.$root.querySelectorAll('.rule:last-child')[0];
+        $n.querySelector('.interval').querySelectorAll('option').forEach((e) => {
+            if (parseInt(e.value) == rule.interval) {
+                e.selected = true;
+                e.defaultSelected = true;
+            } else {
+                e.selected = false;
+                e.defaultSelected = false;
+            }
+        });
+
+        $n.querySelectorAll('input[name="days"]').forEach((e) => {
+            if (rule.days.includes(e.value)) {
+                e.checked = true;
+            } else {
+                e.checked = false;
+            }
+        });
+
+        $n.querySelector('.from').querySelectorAll('option').forEach((e) => {
+            if (parseInt(e.value) == rule.from) {
+                e.selected = true;
+                e.defaultSelected = true;
+            } else {
+                e.selected = false;
+                e.defaultSelected = false;
+            }
+        });
+
+        $n.querySelector('.to').querySelectorAll('option').forEach((e) => {
+            if (parseInt(e.value) == rule.to) {
+                e.selected = true;
+                e.defaultSelected = true;
+            } else {
+                e.selected = false;
+                e.defaultSelected = false;
+            }
+        });
+
+        //this is a saved rule. Start disabled
+        this.disableRule($n);
     }
 
     updateSerial() {
@@ -109,7 +136,7 @@ class Rules {
         });
     }
 
-    saveRule($r, serial = null) {
+    isValid($r, serial = null) {
         let from = parseInt($r.querySelector('.from').value);
         let to = parseInt($r.querySelector('.to').value);
 
@@ -124,26 +151,27 @@ class Rules {
 
         if (days.length == 0) {
             Utils.alert("Please select days", 3000);
-            return;
+            return false;
         }
 
         if (to <= from) {
             Utils.alert("To hours must be greater than from hours", 3000);
-            return;
+            return false;
         }
 
         if (this.isDuplicate(this.getRule($r), serial)) {
             Utils.alert("Duplicate rule", 3000);
-            return;
+            return false;
         }
 
         Logger.Log(TAG, JSON.stringify(this.getRules()));
 
-        Utils.info("Saved", 2000);
+        return true;
+    }
+
+    disableRule($r) {
         $r.style.borderColor = 'grey';
         $r.querySelector('.save-rule').style.display = 'none';
-
-        return;
     }
 
     isDuplicate(r, serial = null) {
@@ -191,15 +219,16 @@ class Rules {
     getRule($r) {
         let r = {};
         r.days = [];
+
         [...$r.querySelectorAll('[name=days]')].forEach(($d) => {
             if ($d.checked) {
                 r.days.push($d.value);
             }
-
-            r.interval = parseInt($r.querySelector('.interval').value);
-            r.from = parseInt($r.querySelector('.from').value);
-            r.to = parseInt($r.querySelector('.to').value);
         });
+
+        r.interval = parseInt($r.querySelector('.interval').value);
+        r.from = parseInt($r.querySelector('.from').value);
+        r.to = parseInt($r.querySelector('.to').value);
 
         return r;
     }
