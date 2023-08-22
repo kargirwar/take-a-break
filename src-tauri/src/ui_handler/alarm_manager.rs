@@ -38,21 +38,21 @@ mod alarm_manager {
             tokio::spawn(async move {
                 loop {
                     match self.rx.recv().await {
-                        Ok(i) => self.handle_command(i),
+                        Ok(i) => self.handle_message(i),
                         Err(e) => debug!("{}", e),
                     };
                 }
             });
         }
 
-        fn handle_command(&mut self, msg: Message) {
+        fn handle_message(&mut self, msg: Message) {
             debug!("alarm_manager:{:?}", msg);
             match msg.typ {
-                MessageType::UpdateAlarms => {
+                MessageType::CmdUpdateAlarms => {
                     self.update_alarms(msg.payload);
                     self.notify_next_alarm();
                 }
-                MessageType::PlayAlarm => {
+                MessageType::CmdPlayAlarm => {
                     play();
                     self.update_prev_alarm();
                     self.notify_next_alarm();
@@ -73,7 +73,7 @@ mod alarm_manager {
 
             //first shut down alarms if any
             let c = Message {
-                typ: MessageType::Shutdown,
+                typ: MessageType::CmdShutdown,
                 payload: Payload::None,
             };
             self.tx.send(c).unwrap();
@@ -111,7 +111,7 @@ mod alarm_manager {
 
             if let Some(next) = self.alarms.next() {
                 let c = Message {
-                    typ: MessageType::NextAlarm,
+                    typ: MessageType::EvtNextAlarm,
                     payload: Payload::Alarms((prev.clone(), next.1.clone())),
                 };
 

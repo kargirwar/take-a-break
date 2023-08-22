@@ -30,11 +30,11 @@ class Constants {
 
     //for rust
     static get CMD_UPDATE_RULES() {
-        return 'update-rules';
+        return 'cmd-update-rules';
     }
 
     static get CMD_STARTUP() {
-        return 'startup';
+        return 'cmd-startup';
     }
 
     //from rust

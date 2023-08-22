@@ -57,24 +57,27 @@ mod ui_handler {
     #[derive(Clone, Debug, PartialEq)]
     pub enum MessageType {
         //from the UI
-        Startup,
-        UpdateRules,
+        CmdStartup,
+        CmdUpdateRules,
         //For UI
-        RulesApplied,
+        EvtRulesApplied,
+
         //For alarm module
-        Shutdown,
+        CmdShutdown,
+         //received from alarm module
+        CmdPlayAlarm,
+
         //For alarm manager
-        UpdateAlarms,
-        //For the UI handler
-        NextAlarm, //from alarm manager to ui handler
-        PlayAlarm, //received from alarm module
+        CmdUpdateAlarms,
+        //From alarm manager
+        EvtNextAlarm,
     }
 
     impl MessageType {
         pub fn from_str(typ: &str) -> Option<Self> {
             match typ {
-                "update-rules" => Some(MessageType::UpdateRules),
-                "startup" => Some(MessageType::Startup),
+                "cmd-update-rules" => Some(MessageType::CmdUpdateRules),
+                "cmd-startup" => Some(MessageType::CmdStartup),
                 _ => None,
             }
         }
@@ -83,8 +86,8 @@ mod ui_handler {
     impl fmt::Display for MessageType {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                MessageType::NextAlarm => write!(f, "event-next-alarm"),
-                MessageType::RulesApplied => write!(f, "event-rules-applied"),
+                MessageType::EvtNextAlarm => write!(f, "event-next-alarm"),
+                MessageType::EvtRulesApplied => write!(f, "event-rules-applied"),
                 _ => write!(f, "not-implemented"),
             }
         }
@@ -133,14 +136,14 @@ mod ui_handler {
                             match message1 {
                                 Some(msg) => {
                                     debug!("Received from UI: {}", msg);
-                                    self.handle_ui_command(msg);
+                                    self.handle_ui_message(msg);
                                 },
                                 None => debug!("Channel 1 closed"),
                             }
                         }
                         message2 = self.am_rx.recv() => {
                             match message2 {
-                                Ok(msg) => self.handle_am_command(msg),
+                                Ok(msg) => self.handle_am_message(msg),
                                 Err(e) => debug!("{}", e),
                             }
                         }
@@ -149,15 +152,14 @@ mod ui_handler {
             });
         }
 
-        fn handle_am_command(&self, msg: Message) {
-            let payload;
-            if let MessageType::NextAlarm = msg.typ {
-                payload = msg.payload;
+        fn handle_am_message(&self, msg: Message) {
+            let payload = if let MessageType::EvtNextAlarm = msg.typ {
+                msg.payload
             } else {
                 return;
-            }
+            };
 
-            debug!("handle_am_command: {:?}", payload);
+            debug!("handle_am_message: {:?}", payload);
             match payload {
                 Payload::Alarms(i) => {
                     let json = json!({
@@ -165,37 +167,38 @@ mod ui_handler {
                         "next-alarm": i.1.to_string()
                     });
                     self.win_handle
-                        .emit_all(&MessageType::NextAlarm.to_string(), json.to_string())
+                        .emit_all(&MessageType::EvtNextAlarm.to_string(), json.to_string())
                         .unwrap();
                 }
                 _ => debug!("ui_handler: invalid"),
             };
         }
 
-        fn handle_ui_command(&self, msg: String) {
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&msg) {
-                if let Some(typ) = json.get("type").and_then(|n| n.as_str()) {
-                    match MessageType::from_str(typ) {
-                        Some(MessageType::UpdateRules) => {
-                            self.handle_update_rules(json);
-                        }
-                        Some(MessageType::Startup) => {
-                            self.handle_startup();
-                        }
-                        _ => debug!("ui_handler::Unknown command"),
+        fn handle_ui_message(&self, msg: String) {
+            let json = match serde_json::from_str::<serde_json::Value>(&msg) {
+                Ok(parsed) => parsed,
+                Err(_) => return,
+            };
+
+            if let Some(typ) = json.get("type").and_then(|n| n.as_str()) {
+                match MessageType::from_str(typ) {
+
+                    Some(MessageType::CmdUpdateRules) => {
+                        self.handle_update_rules(json);
                     }
-                } else {
-                    debug!("ui_handler: No 'type' field or not a string in the JSON object.");
+
+                    Some(MessageType::CmdStartup) => {
+                        self.handle_startup();
+                    }
+                    _ => debug!("ui_handler::Unknown command"),
                 }
-            } else {
-                debug!("ui_handler: Error while parsing JSON");
             }
         }
 
         fn handle_startup(&self) {
             //startoff timers
             let c = Message {
-                typ: MessageType::UpdateAlarms,
+                typ: MessageType::CmdUpdateAlarms,
                 payload: Payload::Rules(self.rules.clone()),
             };
 
@@ -207,7 +210,7 @@ mod ui_handler {
             });
 
             self.win_handle
-                .emit_all(&MessageType::RulesApplied.to_string(), json.to_string())
+                .emit_all(&MessageType::EvtRulesApplied.to_string(), json.to_string())
                 .unwrap();
         }
 
@@ -228,7 +231,7 @@ mod ui_handler {
             Self::save_rules(&rule_objects);
 
             let c = Message {
-                typ: MessageType::UpdateAlarms,
+                typ: MessageType::CmdUpdateAlarms,
                 payload: Payload::Rules(rule_objects),
             };
             self.am_tx.send(c).unwrap();

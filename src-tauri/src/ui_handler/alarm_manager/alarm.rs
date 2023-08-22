@@ -46,7 +46,7 @@ mod alarm {
                     _ = tokio::time::sleep(initial_duration) => {
                         s.send(
                             Message{
-                                typ: MessageType::PlayAlarm,
+                                typ: MessageType::CmdPlayAlarm,
                                 payload: Payload::None
                             }).unwrap();
                     }
@@ -64,7 +64,7 @@ mod alarm {
                         }
                         _ = tokio::time::sleep(weekly_duration) => {
                             s.send(Message{
-                                typ: MessageType::PlayAlarm,
+                                typ: MessageType::CmdPlayAlarm,
                                 payload: Payload::None
                             }).unwrap();
                         }
@@ -86,7 +86,7 @@ mod alarm {
                 loop {
                     match self.rx.recv().await {
                         Ok(i) => {
-                            if i.typ == MessageType::Shutdown {
+                            if i.typ == MessageType::CmdShutdown {
                                 self.token.cancel();
                                 break;
                             }
