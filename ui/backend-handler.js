@@ -11,35 +11,33 @@ class BackendHandler {
     constructor() {
         PubSub.subscribe(Constants.EVENT_RULES_UPDATED, (e) => {
             Logger.Log(TAG, JSON.stringify(e.rules));
-            let rules = [
-                {
-                    serial: 1,
-                    days: ["Sun"],
-                    interval: 20,
-                    from: 16,
-                    to: 17,
-                }
-            ];
-
-            //invoke('command', {
-                //"payload": JSON.stringify({
-                    //name: "update-rules",
-                    //rules: e.rules})
             invoke('command', {
-                //"payload": JSON.stringify({
-                    //name: "update-rules",
-                    //rules: rules})
                 "payload": JSON.stringify({
-                    name: "update-rules",
+                    name: Constants.CMD_UPDATE_RULES,
                     rules: e.rules})
             }).then((response) => {
                 //console.log(response);
             });
         });
 
-        appWindow.listen(Constants.EVENT_NEXT_ALARM, (e) => {
-            Logger.Log(TAG, JSON.stringify(e.payload));
+        PubSub.subscribe(Constants.EVENT_DOM_LOADED, (e) => {
+            invoke('command', {
+                "payload": JSON.stringify({ name: Constants.CMD_STARTUP })
+            }).then((response) => {
+                //console.log(response);
+            });
         });
+
+        appWindow.listen(Constants.EVENT_NEXT_ALARM, (e) => {
+            Logger.Log(TAG, e.payload);
+        });
+
+        appWindow.listen(Constants.EVENT_RULES_APPLIED, (e) => {
+            let json = JSON.parse(e.payload);
+            Logger.Log(TAG, json.rules);
+        });
+
+        Logger.Log(TAG, "Listening to events");
     }
 }
 

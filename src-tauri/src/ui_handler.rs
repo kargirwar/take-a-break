@@ -14,8 +14,8 @@ mod ui_handler {
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::mpsc::Receiver;
-    use std::fs::File;
-    use std::io::Write;
+    use std::fs::{File, OpenOptions};
+    use std::io::{Read, Write};
 
     const BCAST_CHANNEL_SIZE: usize = 10;
 
@@ -42,7 +42,10 @@ mod ui_handler {
     #[derive(Clone, Debug, PartialEq)]
     pub enum CommandName {
         //from the UI
+        Startup,
         UpdateRules,
+        //For UI
+        RulesApplied,
         //For alarm module
         Shutdown,
         //For alarm manager
@@ -56,6 +59,7 @@ mod ui_handler {
         pub fn from_str(name: &str) -> Option<Self> {
             match name {
                 "update-rules" => Some(CommandName::UpdateRules),
+                "startup" => Some(CommandName::Startup),
                 _ => None,
             }
         }
@@ -65,6 +69,7 @@ mod ui_handler {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
                 CommandName::NextAlarm => write!(f, "event-next-alarm"),
+                CommandName::RulesApplied => write!(f, "event-rules-applied"),
                 _ => write!(f, "not-implemented"),
             }
         }
@@ -83,20 +88,25 @@ mod ui_handler {
         //for managing communication with alarm manager
         am_tx: BcastSender<Command>,
         am_rx: BcastReceiver<Command>,
+        rules: Vec<Rule>
     }
 
     impl UiHandler {
         pub fn new(ui_rx: Receiver<String>, win_handle: AppHandle<Wry>) -> Self {
             let (am_tx, am_rx): (BcastSender<Command>, BcastReceiver<Command>) =
                 broadcast::channel(BCAST_CHANNEL_SIZE);
+
             let am = AlarmManager::new(am_tx.clone(), am_tx.subscribe());
             am.run();
+
+            let rules = Self::read_rules();
 
             Self {
                 ui_rx,
                 win_handle,
                 am_tx,
                 am_rx,
+                rules
             }
         }
 
@@ -154,6 +164,9 @@ mod ui_handler {
                         Some(CommandName::UpdateRules) => {
                             self.handle_update_rules(json);
                         }
+                        Some(CommandName::Startup) => {
+                            self.handle_startup();
+                        }
                         _ => debug!("ui_handler::Unknown command"),
                     }
                 } else {
@@ -162,6 +175,25 @@ mod ui_handler {
             } else {
                 debug!("ui_handler: Error while parsing JSON");
             }
+        }
+
+        fn handle_startup(&self) {
+            //startoff timers
+            let c = Command {
+                name: CommandName::UpdateAlarms,
+                payload: Payload::Rules(self.rules.clone()),
+            };
+
+            self.am_tx.send(c).unwrap();
+
+            //inform UI
+            let json = json!({
+                "rules": serde_json::to_string(&self.rules).unwrap()
+            });
+
+            self.win_handle
+                .emit_all(&CommandName::RulesApplied.to_string(), json.to_string())
+                .unwrap();
         }
 
         fn handle_update_rules(&self, json: serde_json::Value) {
@@ -191,6 +223,26 @@ mod ui_handler {
             let serialized_rules = serde_json::to_string(&rules).unwrap();
             let mut file = File::create(get_settings_file_name()).unwrap();
             file.write_all(serialized_rules.as_bytes()).unwrap();
+        }
+
+        fn read_rules() -> Vec<Rule> {
+            let mut file = OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create(true)
+                .open(get_settings_file_name()).unwrap();
+
+            let mut contents = String::new();
+            file.read_to_string(&mut contents).unwrap();
+
+            // Deserialize the content into a Vec<Rule>
+            let rules: Vec<Rule> = if contents.is_empty() {
+                Vec::new()
+            } else {
+                serde_json::from_str(&contents).unwrap()
+            };
+
+            return rules;
         }
     }
 }

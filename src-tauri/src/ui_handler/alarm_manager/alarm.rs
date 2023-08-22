@@ -1,5 +1,4 @@
 mod alarm {
-    use crate::utils::*;
     use crate::AlarmTime;
     use crate::Command;
     use crate::CommandName;

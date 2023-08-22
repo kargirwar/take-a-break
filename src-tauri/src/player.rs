@@ -1,6 +1,6 @@
 mod player {
     use crate::utils::*;
-    use log::debug;
+    //use log::debug;
     use soloud::*;
     use std::thread;
 
