@@ -13,7 +13,7 @@ class BackendHandler {
             Logger.Log(TAG, JSON.stringify(e.rules));
             invoke('command', {
                 "payload": JSON.stringify({
-                    name: Constants.CMD_UPDATE_RULES,
+                    type: Constants.CMD_UPDATE_RULES,
                     rules: e.rules})
             }).then((response) => {
                 Logger.Log(TAG, response);
@@ -22,7 +22,7 @@ class BackendHandler {
 
         PubSub.subscribe(Constants.EVENT_DOM_LOADED, (e) => {
             invoke('command', {
-                "payload": JSON.stringify({ name: Constants.CMD_STARTUP })
+                "payload": JSON.stringify({ type: Constants.CMD_STARTUP })
             }).then((response) => {
                 Logger.Log(TAG, response);
             });

@@ -55,7 +55,7 @@ mod ui_handler {
     }
 
     #[derive(Clone, Debug, PartialEq)]
-    pub enum CommandName {
+    pub enum MessageType {
         //from the UI
         Startup,
         UpdateRules,
@@ -70,29 +70,29 @@ mod ui_handler {
         PlayAlarm, //received from alarm module
     }
 
-    impl CommandName {
-        pub fn from_str(name: &str) -> Option<Self> {
-            match name {
-                "update-rules" => Some(CommandName::UpdateRules),
-                "startup" => Some(CommandName::Startup),
+    impl MessageType {
+        pub fn from_str(typ: &str) -> Option<Self> {
+            match typ {
+                "update-rules" => Some(MessageType::UpdateRules),
+                "startup" => Some(MessageType::Startup),
                 _ => None,
             }
         }
     }
 
-    impl fmt::Display for CommandName {
+    impl fmt::Display for MessageType {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                CommandName::NextAlarm => write!(f, "event-next-alarm"),
-                CommandName::RulesApplied => write!(f, "event-rules-applied"),
+                MessageType::NextAlarm => write!(f, "event-next-alarm"),
+                MessageType::RulesApplied => write!(f, "event-rules-applied"),
                 _ => write!(f, "not-implemented"),
             }
         }
     }
 
     #[derive(Clone, Debug)]
-    pub struct Command {
-        pub name: CommandName,
+    pub struct Message {
+        pub typ: MessageType,
         pub payload: Payload,
     }
 
@@ -101,14 +101,14 @@ mod ui_handler {
         win_handle: AppHandle<Wry>,
 
         //for managing communication with alarm manager
-        am_tx: BcastSender<Command>,
-        am_rx: BcastReceiver<Command>,
+        am_tx: BcastSender<Message>,
+        am_rx: BcastReceiver<Message>,
         rules: Vec<Rule>,
     }
 
     impl UiHandler {
         pub fn new(ui_rx: Receiver<String>, win_handle: AppHandle<Wry>) -> Self {
-            let (am_tx, am_rx): (BcastSender<Command>, BcastReceiver<Command>) =
+            let (am_tx, am_rx): (BcastSender<Message>, BcastReceiver<Message>) =
                 broadcast::channel(BCAST_CHANNEL_SIZE);
 
             let am = AlarmManager::new(am_tx.clone(), am_tx.subscribe());
@@ -149,10 +149,10 @@ mod ui_handler {
             });
         }
 
-        fn handle_am_command(&self, cmd: Command) {
+        fn handle_am_command(&self, msg: Message) {
             let payload;
-            if let CommandName::NextAlarm = cmd.name {
-                payload = cmd.payload;
+            if let MessageType::NextAlarm = msg.typ {
+                payload = msg.payload;
             } else {
                 return;
             }
@@ -165,27 +165,27 @@ mod ui_handler {
                         "next-alarm": i.1.to_string()
                     });
                     self.win_handle
-                        .emit_all(&CommandName::NextAlarm.to_string(), json.to_string())
+                        .emit_all(&MessageType::NextAlarm.to_string(), json.to_string())
                         .unwrap();
                 }
                 _ => debug!("ui_handler: invalid"),
             };
         }
 
-        fn handle_ui_command(&self, cmd: String) {
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&cmd) {
-                if let Some(name) = json.get("name").and_then(|n| n.as_str()) {
-                    match CommandName::from_str(name) {
-                        Some(CommandName::UpdateRules) => {
+        fn handle_ui_command(&self, msg: String) {
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&msg) {
+                if let Some(typ) = json.get("type").and_then(|n| n.as_str()) {
+                    match MessageType::from_str(typ) {
+                        Some(MessageType::UpdateRules) => {
                             self.handle_update_rules(json);
                         }
-                        Some(CommandName::Startup) => {
+                        Some(MessageType::Startup) => {
                             self.handle_startup();
                         }
                         _ => debug!("ui_handler::Unknown command"),
                     }
                 } else {
-                    debug!("ui_handler: No 'name' field or not a string in the JSON object.");
+                    debug!("ui_handler: No 'type' field or not a string in the JSON object.");
                 }
             } else {
                 debug!("ui_handler: Error while parsing JSON");
@@ -194,8 +194,8 @@ mod ui_handler {
 
         fn handle_startup(&self) {
             //startoff timers
-            let c = Command {
-                name: CommandName::UpdateAlarms,
+            let c = Message {
+                typ: MessageType::UpdateAlarms,
                 payload: Payload::Rules(self.rules.clone()),
             };
 
@@ -207,7 +207,7 @@ mod ui_handler {
             });
 
             self.win_handle
-                .emit_all(&CommandName::RulesApplied.to_string(), json.to_string())
+                .emit_all(&MessageType::RulesApplied.to_string(), json.to_string())
                 .unwrap();
         }
 
@@ -227,8 +227,8 @@ mod ui_handler {
 
             Self::save_rules(&rule_objects);
 
-            let c = Command {
-                name: CommandName::UpdateAlarms,
+            let c = Message {
+                typ: MessageType::UpdateAlarms,
                 payload: Payload::Rules(rule_objects),
             };
             self.am_tx.send(c).unwrap();

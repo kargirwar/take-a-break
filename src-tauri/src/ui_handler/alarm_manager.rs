@@ -5,20 +5,20 @@ mod alarm_manager {
     use super::alarm::*;
     use super::types::*;
     use crate::player::play;
-    use crate::{AlarmTime, BcastReceiver, BcastSender, Command, CommandName, Payload, Rule};
+    use crate::{AlarmTime, BcastReceiver, BcastSender, Message, MessageType, Payload, Rule};
 
     use log::debug;
     use std::collections::HashMap;
 
     pub struct AlarmManager<T> {
-        tx: BcastSender<Command>,
-        rx: BcastReceiver<Command>,
+        tx: BcastSender<Message>,
+        rx: BcastReceiver<Message>,
         alarms: WrappingVec<T>,
         prev_alarm: AlarmTime,
     }
 
     impl AlarmManager<(u64, AlarmTime)> {
-        pub fn new(tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
+        pub fn new(tx: BcastSender<Message>, rx: BcastReceiver<Message>) -> Self {
             let alarms = WrappingVec::new();
             let prev_alarm = AlarmTime {
                 day: "Xxx".to_string(),
@@ -45,14 +45,14 @@ mod alarm_manager {
             });
         }
 
-        fn handle_command(&mut self, cmd: Command) {
-            debug!("alarm_manager:{:?}", cmd);
-            match cmd.name {
-                CommandName::UpdateAlarms => {
-                    self.update_alarms(cmd.payload);
+        fn handle_command(&mut self, msg: Message) {
+            debug!("alarm_manager:{:?}", msg);
+            match msg.typ {
+                MessageType::UpdateAlarms => {
+                    self.update_alarms(msg.payload);
                     self.notify_next_alarm();
                 }
-                CommandName::PlayAlarm => {
+                MessageType::PlayAlarm => {
                     play();
                     self.update_prev_alarm();
                     self.notify_next_alarm();
@@ -72,8 +72,8 @@ mod alarm_manager {
             self.alarms.clear();
 
             //first shut down alarms if any
-            let c = Command {
-                name: CommandName::Shutdown,
+            let c = Message {
+                typ: MessageType::Shutdown,
                 payload: Payload::None,
             };
             self.tx.send(c).unwrap();
@@ -110,8 +110,8 @@ mod alarm_manager {
             let prev = &self.prev_alarm;
 
             if let Some(next) = self.alarms.next() {
-                let c = Command {
-                    name: CommandName::NextAlarm,
+                let c = Message {
+                    typ: MessageType::NextAlarm,
                     payload: Payload::Alarms((prev.clone(), next.1.clone())),
                 };
 

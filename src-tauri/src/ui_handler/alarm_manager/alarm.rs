@@ -1,5 +1,5 @@
 mod alarm {
-    use crate::{AlarmTime, BcastReceiver, BcastSender, Command, CommandName, Payload};
+    use crate::{AlarmTime, BcastReceiver, BcastSender, Message, MessageType, Payload};
 
     use chrono::Datelike;
     use chrono::Days;
@@ -13,14 +13,14 @@ mod alarm {
 
     pub struct Alarm {
         t: AlarmTime,
-        tx: BcastSender<Command>,
-        rx: BcastReceiver<Command>,
+        tx: BcastSender<Message>,
+        rx: BcastReceiver<Message>,
         token: CancellationToken,
         pub seconds: i64,
     }
 
     impl Alarm {
-        pub fn new(t: AlarmTime, tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
+        pub fn new(t: AlarmTime, tx: BcastSender<Message>, rx: BcastReceiver<Message>) -> Self {
             let s = tx.clone();
             let token = CancellationToken::new();
             let cloned_token = token.clone();
@@ -45,8 +45,8 @@ mod alarm {
                     }
                     _ = tokio::time::sleep(initial_duration) => {
                         s.send(
-                            Command{
-                                name: CommandName::PlayAlarm,
+                            Message{
+                                typ: MessageType::PlayAlarm,
                                 payload: Payload::None
                             }).unwrap();
                     }
@@ -63,8 +63,8 @@ mod alarm {
                             break;
                         }
                         _ = tokio::time::sleep(weekly_duration) => {
-                            s.send(Command{
-                                name: CommandName::PlayAlarm,
+                            s.send(Message{
+                                typ: MessageType::PlayAlarm,
                                 payload: Payload::None
                             }).unwrap();
                         }
@@ -86,7 +86,7 @@ mod alarm {
                 loop {
                     match self.rx.recv().await {
                         Ok(i) => {
-                            if i.name == CommandName::Shutdown {
+                            if i.typ == MessageType::Shutdown {
                                 self.token.cancel();
                                 break;
                             }
