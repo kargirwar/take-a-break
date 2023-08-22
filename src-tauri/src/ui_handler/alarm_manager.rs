@@ -1,7 +1,9 @@
 mod alarm;
+mod types;
 mod alarm_manager {
 
     use super::alarm::*;
+    use super::types::*;
     use crate::player::play;
     use crate::AlarmTime;
     use crate::Command;
@@ -24,18 +26,16 @@ mod alarm_manager {
         pub to: usize,
     }
 
-    pub struct AlarmManager {
+    pub struct AlarmManager<T> {
         tx: BcastSender<Command>,
         rx: BcastReceiver<Command>,
-        alarms: Vec<(u64, AlarmTime)>,
-        index: u32,
+        alarms: WrappingVec<T>,
         prev_alarm: AlarmTime,
     }
 
-    impl AlarmManager {
+    impl AlarmManager<(u64, AlarmTime)> {
         pub fn new(tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
-            let alarms: Vec<(u64, AlarmTime)> = Vec::new();
-            let index = 0;
+            let alarms = WrappingVec::new();
             let prev_alarm = AlarmTime {
                 day: "Xxx".to_string(),
                 hours: 0,
@@ -45,7 +45,6 @@ mod alarm_manager {
                 tx,
                 rx,
                 alarms,
-                index,
                 prev_alarm,
             }
         }
@@ -87,7 +86,6 @@ mod alarm_manager {
             }
 
             self.alarms.clear();
-            self.index = 0;
 
             //first shut down alarms if any
             let c = Command {
@@ -123,33 +121,24 @@ mod alarm_manager {
         }
 
         fn notify_next_alarm(&mut self) {
-            if self.alarms.len() == 0 {
-                return;
-            }
-
             debug!("alarm_manager::alarms{:?}", self.alarms);
-            debug!("alarm_manager::index{:?}", self.index);
 
             let prev = &self.prev_alarm;
-            let next = &self.alarms[self.index as usize].1;
 
-            let c = Command {
-                name: CommandName::NextAlarm,
-                payload: Payload::Alarms((prev.clone(), next.clone())),
-            };
+            if let Some(next) = self.alarms.next() {
+                let c = Command {
+                    name: CommandName::NextAlarm,
+                    payload: Payload::Alarms((prev.clone(), next.1.clone())),
+                };
 
-            self.tx.send(c).unwrap();
-            self.index = (self.index + 1) % self.alarms.len() as u32;
+                self.tx.send(c).unwrap();
+            }
         }
 
         fn update_prev_alarm(&mut self) {
-            let i: usize;
-            if self.index == 0 {
-                i = self.alarms.len() - 1;
-            } else {
-                i = self.index as usize - 1;
+            if let Some(prev) = self.alarms.prev() {
+                self.prev_alarm = prev.1.clone();
             }
-            self.prev_alarm = self.alarms[i].1.clone();
         }
     }
 
@@ -169,10 +158,8 @@ mod alarm_manager {
         let mut alarms: HashMap<String, HashMap<usize, Vec<usize>>> = HashMap::new();
 
         for r in rules {
-            let hours: HashMap<usize, Vec<usize>> = HashMap::new();
-
             for d in &r.days {
-                alarms.insert(d.clone(), hours.clone());
+                let hours = alarms.entry(d.clone()).or_insert_with(HashMap::new);
 
                 let s = r.from;
                 let e = r.to;
@@ -198,7 +185,7 @@ mod alarm_manager {
                                 break;
                             }
 
-                            alarms.get_mut(d).unwrap().insert(h, mins.clone());
+                            hours.entry(h).or_insert_with(Vec::new).extend(mins.iter());
                             debug!("{} h: {} mins: {:?}", d, h, mins);
 
                             i += 1;
@@ -208,8 +195,8 @@ mod alarm_manager {
 
                     if e == hrs[i] {
                         if m % 60 == 0 {
-                            alarms.get_mut(d).unwrap().insert(e, vec![0]);
-                            debug!("{} h: {} mins: {:?}", d, e, alarms[d].get(&e).unwrap());
+                            hours.entry(e).or_insert_with(|| vec![0]);
+                            debug!("{} h: {} mins: {:?}", d, e, hours[&e]);
                         }
                         break;
                     }
@@ -223,19 +210,30 @@ mod alarm_manager {
     #[cfg(test)]
     mod tests {
         use super::*;
+        use crate::utils::*;
 
         #[test]
         fn test_get_alarms() {
-            let rule = Rule {
+            setup_logger();
+            let rule1 = Rule {
                 serial: 1,
-                days: vec!["Mon".to_string()],
-                interval: 10,
-                from: 9,
-                to: 10,
+                days: vec!["Tue".to_string(), "Wed".to_string()],
+                interval: 1,
+                from: 18,
+                to: 19,
             };
-            let rules = vec![rule];
+
+            let rule2 = Rule {
+                serial: 2,
+                days: vec!["Tue".to_string()],
+                interval: 30,
+                from: 19,
+                to: 20,
+            };
+
+            let rules = vec![rule1, rule2];
             let alarms = get_alarms(&rules);
-            println!("{:?}", alarms);
+            debug!("{:?}", alarms);
             assert!(alarms.contains_key("Sun"));
         }
     }
