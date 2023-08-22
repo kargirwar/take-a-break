@@ -125,16 +125,33 @@ mod utils {
     }
 
     fn get_log_file_name() -> String {
+        if let Some(mut path) = get_app_dir() {
+            path.push("debug.log");
+            return path.to_string_lossy().to_string();
+        }
+
+        return "".to_string();
+    }
+
+    pub fn get_settings_file_name() -> String {
+        if let Some(mut path) = get_app_dir() {
+            path.push("settings.json");
+            return path.to_string_lossy().to_string();
+        }
+
+        return "".to_string();
+    }
+
+    fn get_app_dir() -> Option<PathBuf> {
         if let Some(home_dir) = dirs::home_dir() {
             let mut path = PathBuf::new();
             path.push(home_dir);
             path.push("Library");
             path.push("TauriTimer");
-            path.push("debug.log");
-            return path.to_string_lossy().to_string();
-        } else {
-            return "".to_string();
+            return Some(path);
         }
+
+        return None;
     }
 }
 

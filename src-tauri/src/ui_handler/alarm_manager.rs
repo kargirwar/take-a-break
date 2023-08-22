@@ -2,6 +2,7 @@ mod alarm;
 mod alarm_manager {
 
     use super::alarm::*;
+    use crate::utils::*;
     use crate::player::play;
     use crate::AlarmTime;
     use crate::Command;
@@ -9,12 +10,13 @@ mod alarm_manager {
     use crate::Payload;
 
     use log::debug;
+    use serde::Serialize;
     use serde::Deserialize;
     use std::collections::HashMap;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use tokio::sync::broadcast::Sender as BcastSender;
 
-    #[derive(Debug, Deserialize, Clone)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct Rule {
         pub days: Vec<String>,
         pub from: usize,
@@ -28,20 +30,24 @@ mod alarm_manager {
         rx: BcastReceiver<Command>,
         alarms: Vec<(u64, AlarmTime)>,
         index: u32,
-        prev_alarm: AlarmTime
+        prev_alarm: AlarmTime,
     }
 
     impl AlarmManager {
         pub fn new(tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
             let alarms: Vec<(u64, AlarmTime)> = Vec::new();
             let index = 0;
-            let prev_alarm = AlarmTime{day: "Xxx".to_string(), hours: 0, minutes: 0};
+            let prev_alarm = AlarmTime {
+                day: "Xxx".to_string(),
+                hours: 0,
+                minutes: 0,
+            };
             Self {
                 tx,
                 rx,
                 alarms,
                 index,
-                prev_alarm
+                prev_alarm,
             }
         }
 

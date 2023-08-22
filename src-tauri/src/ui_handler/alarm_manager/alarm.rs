@@ -1,9 +1,9 @@
 mod alarm {
+    use crate::utils::*;
     use crate::AlarmTime;
     use crate::Command;
     use crate::CommandName;
     use crate::Payload;
-    use crate::utils::*;
 
     use chrono::Datelike;
     use chrono::Days;
@@ -184,7 +184,7 @@ mod alarm {
             };
             let seconds = seconds_till_first_alarm(&a);
             println!("seconds: {:?}", seconds);
-            assert!(seconds < 600); 
+            assert!(seconds < 600);
         }
     }
 }

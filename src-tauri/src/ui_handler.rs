@@ -2,6 +2,7 @@ mod alarm_manager;
 mod ui_handler {
 
     use super::alarm_manager::*;
+    use crate::utils::*;
     use log::debug;
     use serde_json::json;
     use std::fmt;
@@ -13,6 +14,8 @@ mod ui_handler {
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::mpsc::Receiver;
+    use std::fs::File;
+    use std::io::Write;
 
     const BCAST_CHANNEL_SIZE: usize = 10;
 
@@ -162,6 +165,7 @@ mod ui_handler {
         }
 
         fn handle_update_rules(&self, json: serde_json::Value) {
+            debug!("rules: {}", json);
             let mut rule_objects: Vec<Rule> = Vec::new();
 
             if let Some(rules) = json.get("rules").and_then(serde_json::Value::as_array) {
@@ -174,11 +178,19 @@ mod ui_handler {
                 debug!("ui_handler:{:#?}", rule_objects);
             }
 
+            Self::save_rules(&rule_objects);
+
             let c = Command {
                 name: CommandName::UpdateAlarms,
                 payload: Payload::Rules(rule_objects),
             };
             self.am_tx.send(c).unwrap();
+        }
+
+        fn save_rules(rules: &Vec<Rule>) {
+            let serialized_rules = serde_json::to_string(&rules).unwrap();
+            let mut file = File::create(get_settings_file_name()).unwrap();
+            file.write_all(serialized_rules.as_bytes()).unwrap();
         }
     }
 }
