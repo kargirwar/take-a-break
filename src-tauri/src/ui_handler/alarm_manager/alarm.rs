@@ -1,8 +1,5 @@
 mod alarm {
-    use crate::AlarmTime;
-    use crate::Command;
-    use crate::CommandName;
-    use crate::Payload;
+    use crate::{AlarmTime, BcastReceiver, BcastSender, Command, CommandName, Payload};
 
     use chrono::Datelike;
     use chrono::Days;
@@ -12,8 +9,6 @@ mod alarm {
     use chrono::Weekday;
     use log::debug;
     use tokio::select;
-    use tokio::sync::broadcast::Receiver as BcastReceiver;
-    use tokio::sync::broadcast::Sender as BcastSender;
     use tokio_util::sync::CancellationToken;
 
     pub struct Alarm {

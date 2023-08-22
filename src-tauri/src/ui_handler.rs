@@ -4,6 +4,8 @@ mod ui_handler {
     use super::alarm_manager::*;
     use crate::utils::*;
     use log::debug;
+    use serde::Deserialize;
+    use serde::Serialize;
     use serde_json::json;
     use std::fmt;
     use std::fs::{File, OpenOptions};
@@ -13,11 +15,24 @@ mod ui_handler {
     use tauri::Wry;
     use tokio::select;
     use tokio::sync::broadcast;
-    use tokio::sync::broadcast::Receiver as BcastReceiver;
-    use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::mpsc::Receiver;
 
+    use tokio::sync::broadcast::Receiver as R;
+    pub type BcastReceiver<T> = R<T>;
+
+    use tokio::sync::broadcast::Sender as S;
+    pub type BcastSender<T> = S<T>;
+
     const BCAST_CHANNEL_SIZE: usize = 10;
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct Rule {
+        pub days: Vec<String>,
+        pub from: usize,
+        pub interval: usize,
+        pub serial: usize,
+        pub to: usize,
+    }
 
     #[derive(Clone, Debug)]
     pub struct AlarmTime {

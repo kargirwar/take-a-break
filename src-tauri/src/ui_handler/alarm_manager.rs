@@ -5,26 +5,10 @@ mod alarm_manager {
     use super::alarm::*;
     use super::types::*;
     use crate::player::play;
-    use crate::AlarmTime;
-    use crate::Command;
-    use crate::CommandName;
-    use crate::Payload;
+    use crate::{AlarmTime, BcastReceiver, BcastSender, Command, CommandName, Payload, Rule};
 
     use log::debug;
-    use serde::Deserialize;
-    use serde::Serialize;
     use std::collections::HashMap;
-    use tokio::sync::broadcast::Receiver as BcastReceiver;
-    use tokio::sync::broadcast::Sender as BcastSender;
-
-    #[derive(Debug, Serialize, Deserialize, Clone)]
-    pub struct Rule {
-        pub days: Vec<String>,
-        pub from: usize,
-        pub interval: usize,
-        pub serial: usize,
-        pub to: usize,
-    }
 
     pub struct AlarmManager<T> {
         tx: BcastSender<Command>,
