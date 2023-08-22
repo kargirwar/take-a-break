@@ -3,7 +3,6 @@ mod ui_handler {
 
     use super::alarm_manager::*;
     use log::debug;
-    use once_cell::race::OnceBool;
     use serde_json::json;
     use std::fmt;
     use tauri::AppHandle;
@@ -16,7 +15,6 @@ mod ui_handler {
     use tokio::sync::mpsc::Receiver;
 
     const BCAST_CHANNEL_SIZE: usize = 10;
-    static INITIALIZED: OnceBool = OnceBool::new();
 
     #[derive(Clone, Debug)]
     pub struct AlarmTime {
@@ -131,29 +129,13 @@ mod ui_handler {
                 return;
             }
 
-            let init_done = match INITIALIZED.get() {
-                Some(i) => i,
-                None => {
-                    INITIALIZED.set(true).unwrap();
-                    false
-                }
-            };
-
-            debug!("handle_am_command: {:?}", init_done);
             debug!("handle_am_command: {:?}", payload);
             match payload {
                 Payload::Alarms(i) => {
-                    let json;
-                    if init_done {
-                        json = json!({
-                            "prev-alarm": i.0.to_string(),
-                            "next-alarm": i.1.to_string()
-                        });
-                    } else {
-                        json = json!({
-                            "next-alarm": i.1.to_string()
-                        });
-                    }
+                    let json = json!({
+                        "prev-alarm": i.0.to_string(),
+                        "next-alarm": i.1.to_string()
+                    });
                     self.win_handle
                         .emit_all(&CommandName::NextAlarm.to_string(), json.to_string())
                         .unwrap();

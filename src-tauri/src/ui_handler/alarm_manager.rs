@@ -28,17 +28,20 @@ mod alarm_manager {
         rx: BcastReceiver<Command>,
         alarms: Vec<(u64, AlarmTime)>,
         index: u32,
+        prev_alarm: AlarmTime
     }
 
     impl AlarmManager {
         pub fn new(tx: BcastSender<Command>, rx: BcastReceiver<Command>) -> Self {
             let alarms: Vec<(u64, AlarmTime)> = Vec::new();
             let index = 0;
+            let prev_alarm = AlarmTime{day: "Xxx".to_string(), hours: 0, minutes: 0};
             Self {
                 tx,
                 rx,
                 alarms,
                 index,
+                prev_alarm
             }
         }
 
@@ -63,6 +66,7 @@ mod alarm_manager {
                 }
                 CommandName::PlayAlarm => {
                     play();
+                    self.update_prev_alarm();
                     self.notify_next_alarm();
                 }
                 _ => debug!("alarm_manager::Unknown command"),
@@ -121,28 +125,26 @@ mod alarm_manager {
             debug!("alarm_manager::alarms{:?}", self.alarms);
             debug!("alarm_manager::index{:?}", self.index);
 
-            let alarms = self.get_next_prev_alarms();
+            let prev = &self.prev_alarm;
+            let next = &self.alarms[self.index as usize].1;
+
             let c = Command {
                 name: CommandName::NextAlarm,
-                payload: Payload::Alarms(alarms),
+                payload: Payload::Alarms((prev.clone(), next.clone())),
             };
 
             self.tx.send(c).unwrap();
             self.index = (self.index + 1) % self.alarms.len() as u32;
         }
 
-        fn get_next_prev_alarms(&self) -> (AlarmTime, AlarmTime) {
-            let mut p;
+        fn update_prev_alarm(&mut self) {
+            let i: usize;
             if self.index == 0 {
-                p = self.alarms.len() as u32 - 1;
+                i = self.alarms.len() - 1;
             } else {
-                p = self.index - 1;
+                i = self.index as usize - 1;
             }
-
-            let a_p = &self.alarms[p as usize].1;
-            let a_n = &self.alarms[self.index as usize].1;
-
-            return (a_p.clone(), a_n.clone());
+            self.prev_alarm = self.alarms[i].1.clone();
         }
     }
 

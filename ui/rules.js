@@ -24,7 +24,7 @@ class Rules {
 
             //debug
             [...this.$root.querySelector('.interval').querySelectorAll('option')].forEach((e) => {
-                if (e.value == "10") {
+                if (e.value == "1") {
                     e.selected = true;
                     e.defaultSelected = true;
                 } else {
@@ -34,7 +34,7 @@ class Rules {
             });
 
             [...this.$root.querySelectorAll('input[name="days"]')].forEach((e) => {
-                if (e.value == "Sat") {
+                if (e.value == "Tue") {
                     e.checked = true;
                 } else {
                     e.checked = false;
@@ -42,7 +42,7 @@ class Rules {
             });
 
             [...this.$root.querySelector('.from').querySelectorAll('option')].forEach((e) => {
-                if (e.value == "15") {
+                if (e.value == "10") {
                     e.selected = true;
                     e.defaultSelected = true;
                 } else {
@@ -52,7 +52,7 @@ class Rules {
             });
 
             [...this.$root.querySelector('.to').querySelectorAll('option')].forEach((e) => {
-                if (e.value == "16") {
+                if (e.value == "11") {
                     e.selected = true;
                     e.defaultSelected = true;
                 } else {
