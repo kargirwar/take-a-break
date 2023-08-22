@@ -6,6 +6,8 @@ mod ui_handler {
     use log::debug;
     use serde_json::json;
     use std::fmt;
+    use std::fs::{File, OpenOptions};
+    use std::io::{Read, Write};
     use tauri::AppHandle;
     use tauri::Manager;
     use tauri::Wry;
@@ -14,8 +16,6 @@ mod ui_handler {
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use tokio::sync::broadcast::Sender as BcastSender;
     use tokio::sync::mpsc::Receiver;
-    use std::fs::{File, OpenOptions};
-    use std::io::{Read, Write};
 
     const BCAST_CHANNEL_SIZE: usize = 10;
 
@@ -88,7 +88,7 @@ mod ui_handler {
         //for managing communication with alarm manager
         am_tx: BcastSender<Command>,
         am_rx: BcastReceiver<Command>,
-        rules: Vec<Rule>
+        rules: Vec<Rule>,
     }
 
     impl UiHandler {
@@ -106,7 +106,7 @@ mod ui_handler {
                 win_handle,
                 am_tx,
                 am_rx,
-                rules
+                rules,
             }
         }
 
@@ -230,7 +230,8 @@ mod ui_handler {
                 .read(true)
                 .write(true)
                 .create(true)
-                .open(get_settings_file_name()).unwrap();
+                .open(get_settings_file_name())
+                .unwrap();
 
             let mut contents = String::new();
             file.read_to_string(&mut contents).unwrap();

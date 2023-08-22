@@ -41,18 +41,25 @@ mod alarm {
                 //In both cases the loop will work on a weekly basis
                 debug!("{:?}:Sleeping initially for {}", alarm_time, seconds);
 
+                let initial_duration = std::time::Duration::from_secs(seconds.try_into().unwrap());
+
                 select! {
                     _ = cloned_token.cancelled() => {
                         debug!("{:?}:Cancelled initial", alarm_time);
                         return;
                     }
-                    _ = tokio::time::sleep(std::time::Duration::from_secs(seconds.try_into().unwrap())) => {
-                        s.send(Command{name: CommandName::PlayAlarm, payload: Payload::None}).unwrap();
+                    _ = tokio::time::sleep(initial_duration) => {
+                        s.send(
+                            Command{
+                                name: CommandName::PlayAlarm,
+                                payload: Payload::None
+                            }).unwrap();
                     }
                 }
 
                 let week_seconds = 7 * 24 * 60 * 60;
-
+                let weekly_duration =
+                    std::time::Duration::from_secs(week_seconds.try_into().unwrap());
                 //weekly alarm
                 loop {
                     select! {
@@ -60,8 +67,11 @@ mod alarm {
                             debug!("{:?}:Cancelled weekly", alarm_time);
                             break;
                         }
-                        _ = tokio::time::sleep(std::time::Duration::from_secs(week_seconds.try_into().unwrap())) => {
-                            s.send(Command{name: CommandName::PlayAlarm, payload: Payload::None}).unwrap();
+                        _ = tokio::time::sleep(weekly_duration) => {
+                            s.send(Command{
+                                name: CommandName::PlayAlarm,
+                                payload: Payload::None
+                            }).unwrap();
                         }
                     }
                 }

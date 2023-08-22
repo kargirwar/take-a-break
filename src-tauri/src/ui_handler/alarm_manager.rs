@@ -9,8 +9,8 @@ mod alarm_manager {
     use crate::Payload;
 
     use log::debug;
-    use serde::Serialize;
     use serde::Deserialize;
+    use serde::Serialize;
     use std::collections::HashMap;
     use tokio::sync::broadcast::Receiver as BcastReceiver;
     use tokio::sync::broadcast::Sender as BcastSender;
