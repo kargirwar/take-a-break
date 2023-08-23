@@ -4,126 +4,138 @@
     <title>Take a Break</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--link(rel="stylesheet" type="text/css" href="./bootstrap.min.css")-->
+    <!--link(rel="stylesheet" type="text/css" href="./css/uikit.min.css")-->
+    <link rel="stylesheet" type="text/css" href="./bulma.min.css">
     <link rel="stylesheet" type="text/css" href="./styles.css">
   </head>
   <body>
-    <div id="container"></div>
+    <div class="container is-fluid" id="container"></div>
+    <!--script(src='./bootstrap.bundle.min.js')-->
+    <!--script(src='./js/uikit.min.js')-->
     <script type="module" src="./router.js"></script>
-    <script id="rules-template" type="code">
-      <div id="rules">
-        <div id="tabs-header">
-          <div class="active" id="tab-rules"> <span>Rules &nbsp; &nbsp;</span><span id="add-rule">
-               <svg class="icon icon-plus"><use xlink:href="symbol-defs.svg#icon-plus"></use></svg></span></div>
-          <div id="tab-status"> <span>Status</span></div>
-        </div>
-        <div id="tabs-content">
-          <div id="rules-content"></div>
-          <div id="status-content">Status</div>
-        </div>
+    <script id="app-template" type="code">
+      <div class="tabs is-toggle is-fullwidth">
+        <ul>
+          <li class="is-active"><a class="rules">Rules</a></li>
+          <li><a class="status">Status</a></li>
+        </ul>
       </div>
+      <div class="container">
+        <div class="tab-content rules">Rules content</div>
+        <div class="tab-content status">Status content</div>
+      </div>
+    </script>
+    <script id="rules-template" type="code">
+      <div id="rules-content"></div>
     </script>
     <script id="rule-template" type="code">
       <div class="rule card">
         <div class="interval-container">
           <div class="label">Every</div>
           <div class="field">
-            <select class="interval control is-fullwidth">
-              <option value="1">1 minutes</option>
-              <option value="2">2 minutes</option>
-              <option value="5">5 minutes</option>
-              <option value="10">10 minutes</option>
-              <option value="15">15 minutes</option>
-              <option value="20">20 minutes</option>
-              <option value="25">25 minutes</option>
-              <option value="30" selected>30 minutes</option>
-              <option value="35">35 minutes</option>
-              <option value="40">40 minutes</option>
-              <option value="45">45 minutes</option>
-              <option value="50">50 minutes</option>
-              <option value="55">55 minutes</option>
-              <option value="60">60 minutes</option>
-            </select>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select class="interval control is-fullwidth">
+                  <option value="1">1 minutes</option>
+                  <option value="2">2 minutes</option>
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="20">20 minutes</option>
+                  <option value="25">25 minutes</option>
+                  <option value="30" selected>30 minutes</option>
+                  <option value="35">35 minutes</option>
+                  <option value="40">40 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="50">50 minutes</option>
+                  <option value="55">55 minutes</option>
+                  <option value="60">60 minutes</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         <div class="days-container">
           <div class="label">On</div>
-          <div class="field">
-            <label>Mon</label>
-            <input type="checkbox" name="days" value="Mon" checked>
-            <label>Tue</label>
-            <input type="checkbox" name="days" value="Tue" checked>
-            <label>Wed</label>
-            <input type="checkbox" name="days" value="Wed" checked>
-            <label>Thu</label>
-            <input type="checkbox" name="days" value="Thu" checked>
-            <label>Fri</label>
-            <input type="checkbox" name="days" value="Fri" checked>
-            <label>Sat</label>
-            <input type="checkbox" name="days" value="Sat">
-            <label>Sun</label>
-            <input type="checkbox" name="days" value="Sun">
+          <div class="days">
+            <button class="button is-small has-text-weight-bold day" data-day="Mon">M</button>
+            <button class="button is-small has-text-weight-bold day" data-day="Tue">T</button>
+            <button class="button is-small has-text-weight-bold day" data-day="Wed">W</button>
+            <button class="button is-small has-text-weight-bold day" data-day="Thu">Th</button>
+            <button class="button is-small has-text-weight-bold day" data-day="Fri">F</button>
+            <button class="button is-small has-text-weight-bold day" data-day="Sat">S</button>
+            <button class="button is-small has-text-weight-bold day" data-day="Sun">Su</button>
           </div>
         </div>
         <div class="from-container">
           <div class="label">From</div>
           <div class="field">
-            <select class="from control">
-              <option value="0">0 hours</option>
-              <option value="1">1 hours</option>
-              <option value="2">2 hours</option>
-              <option value="3">3 hours</option>
-              <option value="4">4 hours</option>
-              <option value="5">5 hours</option>
-              <option value="6">6 hours</option>
-              <option value="7">7 hours</option>
-              <option value="8">8 hours</option>
-              <option value="9" selected>9 hours</option>
-              <option value="10">10 hours</option>
-              <option value="11">11 hours</option>
-              <option value="12">12 hours</option>
-              <option value="13">13 hours</option>
-              <option value="14">14 hours</option>
-              <option value="15">15 hours</option>
-              <option value="16">16 hours</option>
-              <option value="17">17 hours</option>
-              <option value="18">18 hours</option>
-              <option value="19">19 hours</option>
-              <option value="20">20 hours</option>
-              <option value="21">21 hours</option>
-              <option value="22">22 hours</option>
-              <option value="23">23 hours</option>
-            </select>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select class="from">
+                  <option value="0">0 hours</option>
+                  <option value="1">1 hours</option>
+                  <option value="2">2 hours</option>
+                  <option value="3">3 hours</option>
+                  <option value="4">4 hours</option>
+                  <option value="5">5 hours</option>
+                  <option value="6">6 hours</option>
+                  <option value="7">7 hours</option>
+                  <option value="8">8 hours</option>
+                  <option value="9" selected>9 hours</option>
+                  <option value="10">10 hours</option>
+                  <option value="11">11 hours</option>
+                  <option value="12">12 hours</option>
+                  <option value="13">13 hours</option>
+                  <option value="14">14 hours</option>
+                  <option value="15">15 hours</option>
+                  <option value="16">16 hours</option>
+                  <option value="17">17 hours</option>
+                  <option value="18">18 hours</option>
+                  <option value="19">19 hours</option>
+                  <option value="20">20 hours</option>
+                  <option value="21">21 hours</option>
+                  <option value="22">22 hours</option>
+                  <option value="23">23 hours</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         <div class="to-container">
           <div class="label">To</div>
           <div class="field">
-            <select class="to control">
-              <option value="1">1 hours</option>
-              <option value="2">2 hours</option>
-              <option value="3">3 hours</option>
-              <option value="4">4 hours</option>
-              <option value="5">5 hours</option>
-              <option value="6">6 hours</option>
-              <option value="7">7 hours</option>
-              <option value="8">8 hours</option>
-              <option value="9">9 hours</option>
-              <option value="10">10 hours</option>
-              <option value="11">11 hours</option>
-              <option value="12">12 hours</option>
-              <option value="13">13 hours</option>
-              <option value="14">14 hours</option>
-              <option value="15">15 hours</option>
-              <option value="16">16 hours</option>
-              <option value="17">17 hours</option>
-              <option value="18" selected>18 hours</option>
-              <option value="19">19 hours</option>
-              <option value="20">20 hours</option>
-              <option value="21">21 hours</option>
-              <option value="22">22 hours</option>
-              <option value="23">23 hours</option>
-              <option value="24">24 hours</option>
-            </select>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select class="to control">
+                  <option value="1">1 hours</option>
+                  <option value="2">2 hours</option>
+                  <option value="3">3 hours</option>
+                  <option value="4">4 hours</option>
+                  <option value="5">5 hours</option>
+                  <option value="6">6 hours</option>
+                  <option value="7">7 hours</option>
+                  <option value="8">8 hours</option>
+                  <option value="9">9 hours</option>
+                  <option value="10">10 hours</option>
+                  <option value="11">11 hours</option>
+                  <option value="12">12 hours</option>
+                  <option value="13">13 hours</option>
+                  <option value="14">14 hours</option>
+                  <option value="15">15 hours</option>
+                  <option value="16">16 hours</option>
+                  <option value="17">17 hours</option>
+                  <option value="18" selected>18 hours</option>
+                  <option value="19">19 hours</option>
+                  <option value="20">20 hours</option>
+                  <option value="21">21 hours</option>
+                  <option value="22">22 hours</option>
+                  <option value="23">23 hours</option>
+                  <option value="24">24 hours</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         <div class="save-rule"><svg class="icon"><use xlink:href="symbol-defs.svg#icon-floppy-disk"></use></svg></div>

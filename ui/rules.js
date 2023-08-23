@@ -11,16 +11,16 @@ class Rules {
         this.rootTemplate = document.getElementById('rules-template').innerHTML;
         this.ruleTemplate = document.getElementById('rule-template').innerHTML;
         this.rules = [];
+        //this.setupTabs();
     }
 
     load() {
         this.$root.replaceChildren(Utils.generateNode(this.rootTemplate, {}));
-        
         this.$list = this.$root.querySelector('#rules-content');
-        this.setupTabs();
-        this.$root.querySelector('#add-rule').addEventListener('click', () => {
-            this.addRule();
-        });
+
+        //this.$root.querySelector('#add-rule').addEventListener('click', () => {
+            //this.addRule();
+        //});
 
         this.$root.addEventListener('click', (e) => {
             let $n = e.target;
@@ -65,9 +65,6 @@ class Rules {
             $p.querySelector('.save-rule').style.display = 'block';
         });
 
-        //debug
-        //document.querySelector('#add-rule').dispatchEvent(new Event('click'));
-
         PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
             for (let i = 0; i < e.rules.length; i++) {
                 this.addRule(e.rules[i]);
@@ -97,11 +94,10 @@ class Rules {
             }
         });
 
-        $n.querySelectorAll('input[name="days"]').forEach((e) => {
-            if (rule.days.includes(e.value)) {
-                e.checked = true;
-            } else {
-                e.checked = false;
+        $n.querySelectorAll('.day').forEach((e) => {
+            let day = e.dataset.day;
+            if (rule.days.includes(day)) {
+                e.classList.add("is-primary");
             }
         });
 
@@ -234,29 +230,20 @@ class Rules {
     }
 
     setupTabs() {
-        let tabs = this.$root.querySelectorAll('[id^=tab-]');
-        tabs.forEach((t) => {
-            t.addEventListener('click', (e) => {
-                let p = e.target.closest('[id^=tab-]');
-                Logger.Log(TAG, p.classList);
+        Logger.Log(TAG, "setupTabs");
+        UIkit.tab('.tabs');
+        UIkit.util.on('.tabs', 'show', () => {
+            Logger.Log(TAG, "show");
+        });
+        UIkit.util.on('.tabs', 'shown', () => {
+            Logger.Log(TAG, "show");
+        });
 
-                if (p.classList.contains('active')) {
-                    //already selected. nop
-                    return;
-                }
-
-                //TODO: works with only two tabs
-                let sibling = p.nextElementSibling ?? p.previousElementSibling;
-                sibling.classList.remove('active');
-                p.classList.add('active'); 
-
-                //show/hide tab content
-                let n = p.id.replace(/tab-/, '');
-                let content = this.$root.querySelector(`#${n}-content`);
-                content.style.display = 'block';
-                sibling = content.nextElementSibling ?? content.previousElementSibling;
-                sibling.style.display = 'none';
-            });
+        UIkit.util.on('.uk-switcher', 'beforeshow', function(event, area) {
+            //UIkit.notification('Beforeshow', 'primary');
+        });
+        UIkit.util.on('.uk-switcher', 'shown', function(event, area) {
+            //UIkit.notification('Shown', 'success');
         });
     }
 }

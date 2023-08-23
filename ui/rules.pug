@@ -1,52 +1,41 @@
 script#rules-template(type="code")
-    #rules
-        #tabs-header
-            #tab-rules.active 
-                span Rules &nbsp; &nbsp;
-                span#add-rule 
-                    <svg class="icon icon-plus"><use xlink:href="symbol-defs.svg#icon-plus"></use></svg>
-            #tab-status 
-                span Status
-
-        #tabs-content
-            #rules-content
-            #status-content Status
-            
+    #rules-content
 
 script#rule-template(type="code")
     div.rule.card
         .interval-container
             .label Every
             .field
-                select.interval.control.is-fullwidth
-                    include intervals.pug
+                .control
+                    .select.is-small.is-fullwidth
+                        select.interval.control.is-fullwidth
+                            include intervals.pug
         .days-container
             .label On
-            .field
-                label Mon
-                input(type="checkbox" name="days" value="Mon" checked)
-                label Tue
-                input(type="checkbox" name="days" value="Tue" checked)
-                label Wed
-                input(type="checkbox" name="days" value="Wed" checked)
-                label Thu
-                input(type="checkbox" name="days" value="Thu" checked)
-                label Fri
-                input(type="checkbox" name="days" value="Fri" checked)
-                label Sat
-                input(type="checkbox" name="days" value="Sat")
-                label Sun
-                input(type="checkbox" name="days" value="Sun")
+            .days
+                button.button.is-small.has-text-weight-bold.day(data-day="Mon") M
+                button.button.is-small.has-text-weight-bold.day(data-day="Tue") T
+                button.button.is-small.has-text-weight-bold.day(data-day="Wed") W
+                button.button.is-small.has-text-weight-bold.day(data-day="Thu") Th
+                button.button.is-small.has-text-weight-bold.day(data-day="Fri") F
+                button.button.is-small.has-text-weight-bold.day(data-day="Sat") S
+                button.button.is-small.has-text-weight-bold.day(data-day="Sun") Su
+            
+        
         .from-container
             .label From
             .field
-                select.from.control
-                    include from_hours.pug
+                .control
+                    .select.is-small.is-fullwidth
+                        select.from
+                            include from_hours.pug
         .to-container
             .label To
             .field
-                select.to.control
-                    include to_hours.pug
+                .control
+                    .select.is-small.is-fullwidth
+                        select.to.control
+                            include to_hours.pug
         .save-rule
             <svg class="icon"><use xlink:href="symbol-defs.svg#icon-floppy-disk"></use></svg>
 

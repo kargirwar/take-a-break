@@ -2,8 +2,8 @@ import { Constants } from './constants.js'
 import { PubSub } from './pubsub.js'
 import { Utils } from './utils.js'
 import { Logger } from './logger.js'
+import { App } from './app.js'
 //pages
-import { Rules } from './rules.js'
 import { BackendHandler } from './backend-handler.js'
 
 const TAG = "router";
@@ -18,11 +18,11 @@ class Router {
     }
 
     init() {
-        this.container = document.getElementById('container');
-        this.rules = new Rules(this.container);
-
         new BackendHandler();
-        this.rules.load();
+
+        this.$container = document.getElementById('container');
+        this.app = new App(this.$container);
+        this.app.load();
     }
 }
 
