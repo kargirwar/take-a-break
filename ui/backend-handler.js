@@ -30,6 +30,10 @@ class BackendHandler {
 
         appWindow.listen(Constants.EVENT_NEXT_ALARM, (e) => {
             Logger.Log(TAG, e.payload);
+
+            PubSub.publish(Constants.EVENT_NEXT_ALARM, {
+                alarms: JSON.parse(e.payload)
+            });
         });
 
         appWindow.listen(Constants.EVENT_RULES_APPLIED, (e) => {

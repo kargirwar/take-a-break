@@ -1,10 +1,14 @@
 script#app-template(type="code")
-    .tabs.is-toggle.is-fullwidth
-        ul
-            li.is-active
-                a.rules Rules
-            li
-                a.status Status
-    .container
-        .tab-content.rules Rules content
-        .tab-content.status Status content
+    #app-content
+        .tabs.is-toggle.is-fullwidth
+            ul
+                li.is-active
+                    a.rules Rules
+                li
+                    a.status Status
+        .container
+            .tab-content.rules Rules content
+            .tab-content.status Status content
+
+        .add-rule(title="Add new rule")
+            <svg class="icon"><use xlink:href="symbol-defs.svg#icon-plus"></use></svg>

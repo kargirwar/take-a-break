@@ -15,7 +15,9 @@ class Rules {
 
     load() {
         this.$root.replaceChildren(Utils.generateNode(this.rootTemplate, {}));
+        let parentDims = this.$root.getBoundingClientRect();
         this.$list = this.$root.querySelector('#rules-content');
+        this.$list.style.height = parentDims.height + 'px';
 
         this.$root.addEventListener('click', (e) => {
             let $n = e.target;
@@ -36,7 +38,7 @@ class Rules {
         this.$root.addEventListener('click', (e) => {
             let $n = e.target;
             if ($n.classList.contains('save-rule')) {
-                if (!this.isValid($n.parentElement, parseInt(e.target.dataset.serial))) {
+                if (!this.isValid($n.parentElement.parentElement, parseInt(e.target.dataset.serial))) {
                     return;
                 }
 
@@ -73,13 +75,17 @@ class Rules {
             }
         });
 
-
         PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
             for (let i = 0; i < e.rules.length; i++) {
                 this.addRule(e.rules[i]);
             }
 
             this.rules = e.rules;
+            this.updateSerial();
+        });
+
+        PubSub.subscribe(Constants.EVENT_NEW_RULE, () => {
+            this.addRule();
             this.updateSerial();
         });
     }

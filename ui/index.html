@@ -15,15 +15,18 @@
     <!--script(src='./js/uikit.min.js')-->
     <script type="module" src="./router.js"></script>
     <script id="app-template" type="code">
-      <div class="tabs is-toggle is-fullwidth">
-        <ul>
-          <li class="is-active"><a class="rules">Rules</a></li>
-          <li><a class="status">Status</a></li>
-        </ul>
-      </div>
-      <div class="container">
-        <div class="tab-content rules">Rules content</div>
-        <div class="tab-content status">Status content</div>
+      <div id="app-content">
+        <div class="tabs is-toggle is-fullwidth">
+          <ul>
+            <li class="is-active"><a class="rules">Rules</a></li>
+            <li><a class="status">Status</a></li>
+          </ul>
+        </div>
+        <div class="container">
+          <div class="tab-content rules">Rules content</div>
+          <div class="tab-content status">Status content</div>
+        </div>
+        <div class="add-rule" title="Add new rule"><svg class="icon"><use xlink:href="symbol-defs.svg#icon-plus"></use></svg></div>
       </div>
     </script>
     <script id="rules-template" type="code">
@@ -61,25 +64,25 @@
             <div class="label">On</div>
             <div class="days">
               <label class="checkbox"><span class="is-family-monospace">Mon</span>
-                <input type="checkbox">
+                <input name="days" type="checkbox" value="Mon">
               </label>
               <label class="checkbox"><span class="is-family-monospace">Tue</span>
-                <input type="checkbox">
+                <input name="days" type="checkbox" value="Tue">
               </label>
               <label class="checkbox"><span class="is-family-monospace">Wed</span>
-                <input type="checkbox">
+                <input name="days" type="checkbox" value="Wed">
               </label>
               <label class="checkbox"><span class="is-family-monospace">Thu</span>
-                <input type="checkbox">
+                <input name="days" type="checkbox" value="Thu">
               </label>
               <label class="checkbox"><span class="is-family-monospace">Fri</span>
-                <input type="checkbox">
+                <input name="days" type="checkbox" value="Fri">
               </label>
               <label class="checkbox"><span class="is-family-monospace">Sat</span>
-                <input type="checkbox">
+                <input name="days" type="checkbox" value="Sat">
               </label>
               <label class="checkbox"><span class="is-family-monospace">Sun</span>
-                <input type="checkbox">
+                <input name="days" type="checkbox" value="Sun">
               </label>
             </div>
           </div>
@@ -157,6 +160,14 @@
         <div class="rule-controls">
           <div class="save-rule"><svg class="icon"><use xlink:href="symbol-defs.svg#icon-floppy-disk"></use></svg></div>
           <div class="del-rule"><svg class="icon"><use xlink:href="symbol-defs.svg#icon-bin2"></use></svg></div>
+        </div>
+      </div>
+    </script>
+    <script id="status-template" type="code">
+      <div id="status-content">
+        <div class="breaks">
+          <div><span>Next break at:&nbsp;&nbsp;</span><span class="next-break"></span></div>
+          <div><span>Prev break at:&nbsp;&nbsp;</span><span class="prev-break"></span></div>
         </div>
       </div>
     </script>
