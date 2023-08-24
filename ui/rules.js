@@ -11,16 +11,11 @@ class Rules {
         this.rootTemplate = document.getElementById('rules-template').innerHTML;
         this.ruleTemplate = document.getElementById('rule-template').innerHTML;
         this.rules = [];
-        //this.setupTabs();
     }
 
     load() {
         this.$root.replaceChildren(Utils.generateNode(this.rootTemplate, {}));
         this.$list = this.$root.querySelector('#rules-content');
-
-        //this.$root.querySelector('#add-rule').addEventListener('click', () => {
-            //this.addRule();
-        //});
 
         this.$root.addEventListener('click', (e) => {
             let $n = e.target;
@@ -60,10 +55,24 @@ class Rules {
 
         //Track changes
         this.$root.addEventListener('change', (e) => {
+            Logger.Log(TAG, e.target.innerHTML);
             let $p = e.target.closest('.rule');
-            $p.style.borderColor = 'yellow';
+            //$p.style.borderColor = 'yellow';
+            //$p.classList.add('has-background-warning');
             $p.querySelector('.save-rule').style.display = 'block';
         });
+
+        this.$root.addEventListener('click', (e) => {
+            let $n = e.target;
+            if ($n.classList.contains('day')) {
+                Logger.Log(TAG, "clicked day");
+                $n.classList.toggle('is-primary');
+                //const ev = new Event("change");
+                //$n.nextSibling.value = "changed";
+                Logger.Log(TAG, $n.nextSibling.dataset.day);
+            }
+        });
+
 
         PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
             for (let i = 0; i < e.rules.length; i++) {
@@ -227,24 +236,6 @@ class Rules {
         r.to = parseInt($r.querySelector('.to').value);
 
         return r;
-    }
-
-    setupTabs() {
-        Logger.Log(TAG, "setupTabs");
-        UIkit.tab('.tabs');
-        UIkit.util.on('.tabs', 'show', () => {
-            Logger.Log(TAG, "show");
-        });
-        UIkit.util.on('.tabs', 'shown', () => {
-            Logger.Log(TAG, "show");
-        });
-
-        UIkit.util.on('.uk-switcher', 'beforeshow', function(event, area) {
-            //UIkit.notification('Beforeshow', 'primary');
-        });
-        UIkit.util.on('.uk-switcher', 'shown', function(event, area) {
-            //UIkit.notification('Shown', 'success');
-        });
     }
 }
 

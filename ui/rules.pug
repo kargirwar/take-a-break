@@ -3,43 +3,66 @@ script#rules-template(type="code")
 
 script#rule-template(type="code")
     div.rule.card
-        .interval-container
-            .label Every
-            .field
-                .control
-                    .select.is-small.is-fullwidth
-                        select.interval.control.is-fullwidth
-                            include intervals.pug
-        .days-container
-            .label On
-            .days
-                button.button.is-small.has-text-weight-bold.day(data-day="Mon") M
-                button.button.is-small.has-text-weight-bold.day(data-day="Tue") T
-                button.button.is-small.has-text-weight-bold.day(data-day="Wed") W
-                button.button.is-small.has-text-weight-bold.day(data-day="Thu") Th
-                button.button.is-small.has-text-weight-bold.day(data-day="Fri") F
-                button.button.is-small.has-text-weight-bold.day(data-day="Sat") S
-                button.button.is-small.has-text-weight-bold.day(data-day="Sun") Su
-            
-        
-        .from-container
-            .label From
-            .field
-                .control
-                    .select.is-small.is-fullwidth
-                        select.from
-                            include from_hours.pug
-        .to-container
-            .label To
-            .field
-                .control
-                    .select.is-small.is-fullwidth
-                        select.to.control
-                            include to_hours.pug
-        .save-rule
-            <svg class="icon"><use xlink:href="symbol-defs.svg#icon-floppy-disk"></use></svg>
+        div.rule-content
+            .interval-container
+                .label Every
+                .field
+                    .control
+                        .select.is-small.is-fullwidth
+                            select.interval.control.is-fullwidth
+                                include intervals.pug
 
-        .del-rule
-            <svg class="icon"><use xlink:href="symbol-defs.svg#icon-bin2"></use></svg>
+            .days-container
+                .label On
+                .days
+                    label.checkbox
+                        span.is-family-monospace Mon
+                        input(type="checkbox")
+
+                    label.checkbox
+                        span.is-family-monospace Tue
+                        input(type="checkbox")
+                
+                    label.checkbox
+                        span.is-family-monospace Wed
+                        input(type="checkbox")
+            
+                    label.checkbox
+                        span.is-family-monospace Thu
+                        input(type="checkbox")
+
+                    label.checkbox
+                        span.is-family-monospace Fri
+                        input(type="checkbox")
+
+                    label.checkbox
+                        span.is-family-monospace Sat
+                        input(type="checkbox")
+
+                    label.checkbox
+                        span.is-family-monospace Sun
+                        input(type="checkbox")
+
+            .from-container
+                .label From
+                .field
+                    .control
+                        .select.is-small.is-fullwidth
+                            select.from
+                                include from_hours.pug
+            .to-container
+                .label To
+                .field
+                    .control
+                        .select.is-small.is-fullwidth
+                            select.to.control
+                                include to_hours.pug
+
+        div.rule-controls
+            .save-rule
+                <svg class="icon"><use xlink:href="symbol-defs.svg#icon-floppy-disk"></use></svg>
+
+            .del-rule
+                <svg class="icon"><use xlink:href="symbol-defs.svg#icon-bin2"></use></svg>
 
 
