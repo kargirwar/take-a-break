@@ -21,7 +21,7 @@ class App {
             PubSub.publish(Constants.EVENT_NEW_RULE, {});
         });
 
-        new Tabs();
+        //new Tabs();
 
         let rules = new Rules(document.querySelector('.tab-content.rules'));
         rules.load();

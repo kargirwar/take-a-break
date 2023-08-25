@@ -16,12 +16,13 @@
     <script type="module" src="./router.js"></script>
     <script id="app-template" type="code">
       <div id="app-content">
-        <div class="tabs is-toggle is-fullwidth">
-          <ul>
-            <li class="is-active"><a class="rules">Rules</a></li>
-            <li><a class="status">Status</a></li>
-          </ul>
-        </div>
+        <!--.tabs.is-toggle.is-fullwidth
+        //ul
+            //li.is-active
+                //a.rules Rules
+            //li
+                //a.status Status
+        -->
         <div class="container">
           <div class="tab-content rules">Rules content</div>
           <div class="tab-content status">Status content</div>
@@ -32,6 +33,15 @@
     <script id="rules-template" type="code">
       <div id="rules-content">
         <div class="notification is-primary is-light has-text-centered no-rules-message">No rules yet! Click "+" below to get started!</div>
+        <div class="rule-title">
+          <div class="dummy-left"></div>
+          <div class="title-text-container">
+            <div class="title-text is-primary"><span>Take a break!&nbsp;</span>
+              <div class="help" title="Why?"><svg class="icon"><use xlink:href="symbol-defs.svg#icon-question"></use></svg></div>
+            </div>
+          </div>
+          <div class="dummy-right"></div>
+        </div>
       </div>
     </script>
     <script id="rule-template" type="code">

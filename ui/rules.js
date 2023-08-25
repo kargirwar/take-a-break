@@ -16,6 +16,7 @@ class Rules {
     load() {
         this.$root.replaceChildren(Utils.generateNode(this.rootTemplate, {}));
         this.$message = this.$root.querySelector('.no-rules-message');
+        this.$title = this.$root.querySelector('.rule-title');
 
         /*fix list height for scrolling*/
         let parentDims = this.$root.getBoundingClientRect();
@@ -38,6 +39,7 @@ class Rules {
 
                 if (this.rules.length == 0) {
                     this.$message.style.display = 'block';
+                    this.$title.style.display = 'none';
                 }
             }
         });
@@ -71,10 +73,12 @@ class Rules {
         PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
             if (e.rules.length == 0) {
                 this.$message.style.display = 'block';
+                this.$title.style.display = 'none';
                 return;
             }
 
             this.$message.style.display = 'none';
+            this.$title.style.display = 'grid';
 
             for (let i = 0; i < e.rules.length; i++) {
                 this.addRule(e.rules[i]);
@@ -86,6 +90,7 @@ class Rules {
 
         PubSub.subscribe(Constants.EVENT_NEW_RULE, () => {
             this.$message.style.display = 'none';
+            this.$title.style.display = 'grid';
             this.addRule();
             this.updateSerial();
         });

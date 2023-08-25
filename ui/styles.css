@@ -15,6 +15,11 @@ body, html {
 	position:relative;
 }
 
+#app-content {
+	width:100%;
+	height:100%;
+}
+
 #app-content .container {
 	width:100%;
 	height:100%;
@@ -156,8 +161,6 @@ body, html {
 
 #app-content {
 	position:relative;
-	display:grid;
-	grid-template-rows:1fr 8fr;
 }
 
 .add-rule {
@@ -180,6 +183,7 @@ body, html {
 }
 
 #rules-content {
+	padding-top:20px;
 	padding-bottom:50px;
 }
 
@@ -189,4 +193,48 @@ body, html {
 	display:flex;
 	align-items:center;
 	justify-content:center;
+}
+
+.rule-title {
+	display:none;
+	grid-template-columns:1fr 1fr 1fr;
+	margin-bottom:5px;
+}
+
+.dummy-left {
+	border-top: 1px solid hsl(0, 0%, 86%);
+	border-left: 1px solid hsl(0, 0%, 86%);
+	height:15px;
+}
+
+.dummy-right {
+	border-top: 1px solid hsl(0, 0%, 86%);
+	border-right: 1px solid hsl(0, 0%, 86%);
+	height:15px;
+}
+
+.title-text-container {
+	position:relative;
+}
+
+.title-text {
+	position:absolute;
+	top:-10px;
+	width:100%;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+
+.help {
+	display:inline-block;
+	cursor:pointer;
+}
+
+.help .icon {
+	stroke: hsl(204, 86%, 53%);
+	fill:hsl(204, 86%, 53%);
+	width:20px;
+	height:20px;
+	pointer-events:auto;
 }

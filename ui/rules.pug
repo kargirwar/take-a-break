@@ -2,6 +2,15 @@ script#rules-template(type="code")
     #rules-content
         .notification.is-primary.is-light.has-text-centered.no-rules-message
             | No rules yet! Click "+" below to get started!
+        .rule-title
+            div.dummy-left
+            div.title-text-container
+                div.title-text.is-primary
+                    span Take a break!&nbsp;
+                    .help(title="Why?")
+                        <svg class="icon"><use xlink:href="symbol-defs.svg#icon-question"></use></svg>
+
+            div.dummy-right
 
 
 script#rule-template(type="code")
