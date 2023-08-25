@@ -6,14 +6,13 @@ mod utils {
 
     use dirs;
     use log::LevelFilter;
+    use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
+    use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
+    use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
+    use log4rs::append::rolling_file::RollingFileAppender;
     use log4rs::{
-        append::{
-            console::{ConsoleAppender, Target},
-            file::FileAppender,
-        },
         config::{Appender, Config, Root},
         encode::pattern::PatternEncoder,
-        filter::threshold::ThresholdFilter,
     };
     use std::fs;
     use std::path::PathBuf;
@@ -79,45 +78,34 @@ mod utils {
     }
 
     pub fn setup_logger() {
-        let level = log::LevelFilter::Info;
+        //setup rotation
+        let file_name = get_log_file_name();
+        let window_size = 1; // log0, log1, log2
+        let fixed_window_roller = FixedWindowRoller::builder()
+            .build(&(file_name.clone() + "{}"), window_size)
+            .unwrap();
+        let size_limit = 1 * 1024 * 1024; //1mb
+        let size_trigger = SizeTrigger::new(size_limit);
+        let compound_policy =
+            CompoundPolicy::new(Box::new(size_trigger), Box::new(fixed_window_roller));
 
-        let file_path = get_log_file_name();
-        if file_path.is_empty() {
-            return;
-        }
-        // Build a stderr logger.
-        let stderr = ConsoleAppender::builder().target(Target::Stderr).build();
-
-        // Logging to log file.
-        let logfile = FileAppender::builder()
+        let logfile = RollingFileAppender::builder()
             .encoder(Box::new(PatternEncoder::new(
-                "{d(%Y-%m-%d %H:%M:%S%.3f)} [{l}] - {m}{n}",
-            )))
-            .build(file_path)
+                        "{d(%Y-%m-%d %H:%M:%S%.3f)} [{l}] - {m}{n}",
+                        )))
+            .build(file_name, Box::new(compound_policy))
             .unwrap();
 
-        // Log Trace level output to file where trace is the default level
-        // and the programmatically specified level to stderr.
         let config = Config::builder()
             .appender(Appender::builder().build("logfile", Box::new(logfile)))
-            .appender(
-                Appender::builder()
-                    .filter(Box::new(ThresholdFilter::new(level)))
-                    .build("stderr", Box::new(stderr)),
-            )
             .build(
                 Root::builder()
-                    .appender("logfile")
-                    .appender("stderr")
-                    .build(LevelFilter::Debug),
-            )
+                .appender("logfile")
+                .build(LevelFilter::Debug),
+                )
             .unwrap();
 
-        // Use this to change log levels at runtime.
-        // This means you can change the default log level to trace
-        // if you are trying to debug an issue and need more logs on then turn it off
-        // once you are done.
-        let _handle = log4rs::init_config(config).unwrap();
+        log4rs::init_config(config).unwrap();
     }
 
     fn dir_exists(path: &str) -> bool {

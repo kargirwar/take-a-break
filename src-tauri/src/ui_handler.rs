@@ -64,7 +64,7 @@ mod ui_handler {
 
         //For alarm module
         CmdShutdown,
-         //received from alarm module
+        //received from alarm module
         CmdPlayAlarm,
 
         //For alarm manager
@@ -182,7 +182,6 @@ mod ui_handler {
 
             if let Some(typ) = json.get("type").and_then(|n| n.as_str()) {
                 match MessageType::from_str(typ) {
-
                     Some(MessageType::CmdUpdateRules) => {
                         self.handle_update_rules(json);
                     }
