@@ -57,22 +57,8 @@ class Rules {
 
         //Track changes
         this.$root.addEventListener('change', (e) => {
-            Logger.Log(TAG, e.target.innerHTML);
             let $p = e.target.closest('.rule');
-            //$p.style.borderColor = 'yellow';
-            //$p.classList.add('has-background-warning');
             $p.querySelector('.save-rule').style.display = 'block';
-        });
-
-        this.$root.addEventListener('click', (e) => {
-            let $n = e.target;
-            if ($n.classList.contains('day')) {
-                Logger.Log(TAG, "clicked day");
-                $n.classList.toggle('is-primary');
-                //const ev = new Event("change");
-                //$n.nextSibling.value = "changed";
-                Logger.Log(TAG, $n.nextSibling.dataset.day);
-            }
         });
 
         PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
@@ -109,10 +95,11 @@ class Rules {
             }
         });
 
-        $n.querySelectorAll('.day').forEach((e) => {
-            let day = e.dataset.day;
-            if (rule.days.includes(day)) {
-                e.classList.add("is-primary");
+        $n.querySelectorAll('input[name="days"]').forEach((e) => {
+            if (rule.days.includes(e.value)) {
+                e.checked = true;
+            } else {
+                e.checked = false;
             }
         });
 
