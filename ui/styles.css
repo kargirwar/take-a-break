@@ -238,3 +238,23 @@ body, html {
 	height:20px;
 	pointer-events:auto;
 }
+
+.back .icon {
+	stroke: hsl(204, 86%, 53%);
+	fill:hsl(204, 86%, 53%);
+	width:20px;
+	height:20px;
+	pointer-events:auto;
+	cursor:pointer;
+}
+
+#help-content {
+	height:100%;
+	padding:5px;
+}
+
+#help-content .card {
+	padding:1em;
+	height: 80%;
+	overflow-y:scroll;
+}

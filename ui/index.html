@@ -4,15 +4,11 @@
     <title>Take a Break</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--link(rel="stylesheet" type="text/css" href="./bootstrap.min.css")-->
-    <!--link(rel="stylesheet" type="text/css" href="./css/uikit.min.css")-->
     <link rel="stylesheet" type="text/css" href="./bulma.min.css">
     <link rel="stylesheet" type="text/css" href="./styles.css">
   </head>
   <body>
     <div class="container is-fluid" id="container"></div>
-    <!--script(src='./bootstrap.bundle.min.js')-->
-    <!--script(src='./js/uikit.min.js')-->
     <script type="module" src="./router.js"></script>
     <script id="app-template" type="code">
       <div id="app-content">
@@ -175,15 +171,36 @@
         </div>
       </div>
     </script>
-    <script id="status-template" type="code">
-      <div id="status-content">
-        <div class="breaks">
-          <div><span>Next break at:&nbsp;&nbsp;</span><span class="next-break"></span></div>
-          <div><span>Prev break at:&nbsp;&nbsp;</span><span class="prev-break"></span></div>
-        </div>
+    <script id="help-template" type="code">
+      <div id="help-content">
+        <div class="help-title has-text-centered is-size-2"><span>Why?</span><span class="back is-pulled-left"><svg class="icon"><use xlink:href="symbol-defs.svg#icon-arrow-left"></use></svg></span></div>
+        <div class="card has-text-justified"><span class="is-italic">Sitting is the new smoking!</span><span>
+             Research indicates that sitting long hours
+            is deterimental to our health,<span class="is-italic">even if we exercise regularly.</span>Unfortunately if you are part of the knowledge
+            economy, sitting is going to be a significant 
+            part of your life. What can you do? Take regular
+            breaks! This is easier said than done. Sometimes
+            we are so engrossed in our work we loose all sense of 
+            time. May be you are trying to debug your code, may be 
+            you are tweaking your graphic design, may be you are
+            trying to finish your latest blog ..and who knows what else?
+            Before you realize you would have spent several hours glued
+            to your seat. Not good. <br><br>
+            Take a break solves this problem by playing a beep at 
+            an interval of your choice. Protocol is simple: whenever
+            you hear the beep, stop whatever you are doing. Get up 
+            from your seat. Go for a short walk. Do some stretching.
+            Make sure your body gets some movement. You can resume your
+            work after 2-3 minutes. <br><br>
+            Are you thinking "But I might loose my focus..I was so close
+            to solving my problem when this beep started ..". Don't worry!
+            Taking Short breaks will actually enhance your productivity.
+            Sometimes taking your mind off the problem , even for a few minutes,
+            can actually spark new ideas!
+            If you absolutely must not be disturbed during some hours 
+            (a regular meeting may be?) then you can adjust the rules accordingly.</span></div>
       </div>
     </script>
-    <!--include splash.pug-->
     <div id="dialog-container">
       <div id="dialog"></div>
     </div>

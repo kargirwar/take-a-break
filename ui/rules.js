@@ -13,7 +13,7 @@ class Rules {
         this.rules = [];
     }
 
-    load() {
+    load(rules) {
         this.$root.replaceChildren(Utils.generateNode(this.rootTemplate, {}));
         this.$message = this.$root.querySelector('.no-rules-message');
         this.$title = this.$root.querySelector('.rule-title');
@@ -38,8 +38,7 @@ class Rules {
                 });
 
                 if (this.rules.length == 0) {
-                    this.$message.style.display = 'block';
-                    this.$title.style.display = 'none';
+                    this.showError(true);
                 }
             }
         });
@@ -70,30 +69,47 @@ class Rules {
             $p.querySelector('.save-rule').style.display = 'block';
         });
 
-        PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
-            if (e.rules.length == 0) {
-                this.$message.style.display = 'block';
-                this.$title.style.display = 'none';
-                return;
-            }
-
-            this.$message.style.display = 'none';
-            this.$title.style.display = 'grid';
-
-            for (let i = 0; i < e.rules.length; i++) {
-                this.addRule(e.rules[i]);
-            }
-
-            this.rules = e.rules;
-            this.updateSerial();
-        });
-
         PubSub.subscribe(Constants.EVENT_NEW_RULE, () => {
-            this.$message.style.display = 'none';
-            this.$title.style.display = 'grid';
+            Logger.Log(TAG, "EVENT_NEW_RULE");
+            this.showError(false);
             this.addRule();
             this.updateSerial();
         });
+
+        this.$root.querySelector('.help').addEventListener('click', (e) => {
+            Logger.Log(TAG, "help");
+            Logger.Log(TAG, "before help: " + JSON.stringify(this.rules));
+            PubSub.publish(Constants.PAGE_HELP, {});
+        });
+
+        this.loadRules(rules);
+    }
+
+    loadRules(rules) {
+        Logger.Log(TAG, "loadRules:" + rules);
+        if (rules.length == 0) {
+            this.showError(true);
+            return;
+        }
+
+        this.showError(false);
+
+        for (let i = 0; i < rules.length; i++) {
+            this.addRule(rules[i]);
+        }
+
+        this.updateSerial();
+    }
+
+    //TODO: need better name for this
+    showError(show) {
+        if (show) {
+            this.$message.style.display = 'block';
+            this.$title.style.display = 'none';
+        } else {
+            this.$message.style.display = 'none';
+            this.$title.style.display = 'grid';
+        }
     }
 
     addRule(rule = {}) {

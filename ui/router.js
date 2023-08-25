@@ -3,7 +3,7 @@ import { PubSub } from './pubsub.js'
 import { Utils } from './utils.js'
 import { Logger } from './logger.js'
 import { App } from './app.js'
-import { Splash } from './splash.js'
+import { Help } from './help.js'
 //pages
 import { BackendHandler } from './backend-handler.js'
 
@@ -20,18 +20,15 @@ class Router {
 
     init() {
         this.$container = document.getElementById('container');
+        this.app = new App(this.$container);
+        this.help = new Help(this.$container);
 
-        PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
-            Logger.Log(TAG, "EVENT_RULES_APPLIED");
-            //if (e.rules.length == 0) {
-                //Logger.Log(TAG, "Loading splash");
-                //let splash = new Splash(this.$container);
-                //splash.load();
-                //return;
-            //}
 
-            Logger.Log(TAG, "Loading app");
-            this.app = new App(this.$container);
+        PubSub.subscribe(Constants.PAGE_HELP, (e) => {
+            this.help.load();
+        });
+
+        PubSub.subscribe(Constants.PAGE_APP, (e) => {
             this.app.load();
         });
 

@@ -15,6 +15,10 @@ class Constants {
         return 'page-rules';
     }
 
+    static get PAGE_HELP() {
+        return 'page-help';
+    }
+
     //js events
     static get EVENT_DOM_LOADED() {
         return 'event-dom-loaded';
@@ -26,6 +30,10 @@ class Constants {
 
     static get EVENT_NEXT_ALARM() {
         return 'event-next-alarm';
+    }
+
+    static get EVENT_NEW_RULE() {
+        return 'event-next-rule';
     }
 
     //for rust
