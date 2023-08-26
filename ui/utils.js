@@ -19,12 +19,14 @@ class Utils {
         return template.content
     }
 
+    //TODO: alert and info are not DRY
     static alert(msg, time) {
         let $root = document.querySelector('#dialog-container');
         $root.style.display = 'flex';
         let $dialog = $root.querySelector('#dialog'); 
         $dialog.innerHTML = msg;
-        $dialog.style.background = 'orange'
+        $dialog.classList.remove('is-info');
+        $dialog.classList.add('is-warning');
 
         setTimeout(() => {
             $root.style.display = 'none';
@@ -36,7 +38,9 @@ class Utils {
         $root.style.display = 'flex';
         let $dialog = $root.querySelector('#dialog'); 
         $dialog.innerHTML = msg;
-        $dialog.style.background = 'blue'
+        $dialog.classList.remove('is-warning');
+        $dialog.classList.add('is-info');
+        //$dialog.style.background = 'blue'
 
         setTimeout(() => {
             $root.style.display = 'none';

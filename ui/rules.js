@@ -98,6 +98,7 @@ class Rules {
             this.addRule(rules[i]);
         }
 
+        this.rules = rules;
         this.updateSerial();
     }
 
