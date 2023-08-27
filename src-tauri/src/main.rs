@@ -10,6 +10,7 @@ use crate::ui_handler::*;
 use log::debug;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
+use tauri::{Menu, MenuItem, AboutMetadata};
 
 #[tokio::main]
 async fn main() {
@@ -19,7 +20,22 @@ async fn main() {
 
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
+        //authors: None,
+        //comments: None,
+        //copyright: None,
+        //license: None,
+        //website: None,
+        //website_label: None,
+    //};
+    let mut meta_data = AboutMetadata::default();
+    meta_data.version = Some("0.1".to_string());
+
+    let menu = Menu::new()
+        .add_native_item(MenuItem::Quit)
+        .add_native_item(MenuItem::About("Take a break!".to_string(), meta_data));
+
     let app = tauri::Builder::default()
+        .menu(menu)
         .manage(tx.clone())
         .invoke_handler(tauri::generate_handler![command])
         .build(tauri::generate_context!())
