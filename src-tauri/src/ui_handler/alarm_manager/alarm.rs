@@ -12,8 +12,6 @@ mod alarm {
     use tokio_util::sync::CancellationToken;
 
     pub struct Alarm {
-        t: AlarmTime,
-        tx: BcastSender<Message>,
         rx: BcastReceiver<Message>,
         token: CancellationToken,
         pub seconds: i64,
@@ -73,8 +71,6 @@ mod alarm {
             });
 
             Self {
-                t,
-                tx,
                 rx,
                 token,
                 seconds,

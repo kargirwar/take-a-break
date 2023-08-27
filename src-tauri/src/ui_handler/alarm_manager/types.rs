@@ -47,10 +47,6 @@ mod types {
             self.at(prev_index)
         }
 
-        pub fn len(&self) -> usize {
-            self.data.len()
-        }
-
         pub fn at(&self, index: usize) -> Option<&T> {
             if index < self.data.len() {
                 Some(&self.data[index])

@@ -14,7 +14,6 @@ mod utils {
         config::{Appender, Config, Root},
         encode::pattern::PatternEncoder,
     };
-    use std::fs;
     use std::path::PathBuf;
 
     pub enum LockedState {
@@ -108,10 +107,6 @@ mod utils {
         log4rs::init_config(config).unwrap();
     }
 
-    fn dir_exists(path: &str) -> bool {
-        fs::metadata(path).is_ok()
-    }
-
     fn get_log_file_name() -> String {
         if let Some(mut path) = get_app_dir() {
             path.push("debug.log");
@@ -135,7 +130,7 @@ mod utils {
             let mut path = PathBuf::new();
             path.push(home_dir);
             path.push("Library");
-            path.push("TauriTimer");
+            path.push("TauriTimerDev");
             return Some(path);
         }
 
