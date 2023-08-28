@@ -1,3 +1,6 @@
+//! A simple, configurable timer which serves as a reminder to take
+//! regular breaks while working on a desktop/laptop.
+//!
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -19,13 +22,6 @@ async fn main() {
 
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
-    //authors: None,
-    //comments: None,
-    //copyright: None,
-    //license: None,
-    //website: None,
-    //website_label: None,
-    //};
     let mut meta_data = AboutMetadata::default();
     meta_data.version = Some("0.1".to_string());
 

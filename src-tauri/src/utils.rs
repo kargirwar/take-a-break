@@ -1,3 +1,4 @@
+//! Miscellaneous utilities
 mod utils {
     use plist::Value;
     use std::fmt;
@@ -22,6 +23,7 @@ mod utils {
         Unknown,
     }
 
+    /// Checks if screen is locked. Works only on Mac at the moment
     pub fn is_locked() -> LockedState {
         let buf = Command::new("ioreg")
             .args(&["-n", "Root", "-d1", "-a"])
@@ -76,6 +78,8 @@ mod utils {
         }
     }
 
+    /// Logger settings.Sends all debug prints to <app_dir>/debug.log
+    /// Log file rotated after 1M.
     pub fn setup_logger() {
         //setup rotation
         let file_name = get_log_file_name();

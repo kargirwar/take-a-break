@@ -1,3 +1,5 @@
+//! Module to handle interactions with UI.
+//! Receives commands from JS world and sends back events.
 mod alarm_manager;
 mod ui_handler {
 

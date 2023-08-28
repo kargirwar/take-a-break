@@ -1,3 +1,9 @@
+//! Implements core timer functionality. Starts a thread which 
+//! wakes up every minute and checks if an alarm is to be played.
+//! CPU usage (on Mac) is not significant
+//! The tread runs throughout the life of the app. No need to handle
+//! shutdown
+
 mod alarm_manager {
 
     use crate::player::play;
@@ -32,14 +38,15 @@ mod alarm_manager {
                         }
 
                         _ = tokio::time::sleep(Duration::from_secs(60)) => {
-                            self.handle_timer();
+                            self.handle_timer_expiry();
                         }
                     }
                 }
             });
         }
 
-        fn handle_timer(&self) {
+        /// Recurring 1 minute timer
+        fn handle_timer_expiry(&self) {
             debug!("alarm_manager: timer expiry");
             let now = chrono::offset::Local::now();
 
@@ -58,14 +65,12 @@ mod alarm_manager {
             }
         }
 
+        /// Handles message from ui_handlers
         fn handle_message(&mut self, msg: Message) {
             debug!("alarm_manager:{:?}", msg);
             match msg.typ {
                 MessageType::CmdUpdateAlarms => {
                     self.update_alarms(msg.payload);
-                }
-                MessageType::CmdPlayAlarm => {
-                    play();
                 }
                 _ => debug!("alarm_manager::Unknown command"),
             }
@@ -95,6 +100,8 @@ mod alarm_manager {
         hrs
     }
 
+    /// For a set of rules, finds the hours and minutes for each day at which 
+    /// alarm should be played. Assumes that rules are not overlapping
     fn get_alarms(rules: &[Rule]) -> HashMap<Weekday, HashMap<usize, Vec<usize>>> {
         let mut alarms: HashMap<Weekday, HashMap<usize, Vec<usize>>> = HashMap::new();
 
