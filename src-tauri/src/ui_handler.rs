@@ -50,7 +50,6 @@ mod ui_handler {
     #[derive(Clone, Debug)]
     pub enum Payload {
         Rules(Vec<Rule>),
-        Alarms((AlarmTime, AlarmTime)),
         None,
     }
 
@@ -160,18 +159,6 @@ mod ui_handler {
             };
 
             debug!("handle_am_message: {:?}", payload);
-            match payload {
-                Payload::Alarms(i) => {
-                    let json = json!({
-                        "prev-alarm": i.0.to_string(),
-                        "next-alarm": i.1.to_string()
-                    });
-                    self.win_handle
-                        .emit_all(&MessageType::EvtNextAlarm.to_string(), json.to_string())
-                        .unwrap();
-                }
-                _ => debug!("ui_handler: invalid"),
-            };
         }
 
         fn handle_ui_message(&self, msg: String) {

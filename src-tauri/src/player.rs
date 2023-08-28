@@ -13,7 +13,7 @@ mod player {
             _ => (),
         }
 
-        for _ in 0..10 {
+        for _ in 0..5 {
             thread::spawn(|| {
                 let mut sl = Soloud::default().unwrap();
                 sl.set_global_volume(3.0);

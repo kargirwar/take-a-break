@@ -1,194 +1,170 @@
-mod alarm;
-mod types;
 mod alarm_manager {
 
-    use super::alarm::*;
-    use super::types::*;
     use crate::player::play;
-    use crate::{AlarmTime, BcastReceiver, BcastSender, Message, MessageType, Payload, Rule};
+    use crate::{BcastReceiver, BcastSender, Message, MessageType, Payload, Rule};
+    use chrono::{offset::Local, Timelike, Datelike, Weekday};
+    use std::time::Duration;
 
     use log::debug;
     use std::collections::HashMap;
 
-    pub struct AlarmManager<T> {
+    pub struct AlarmManager {
         tx: BcastSender<Message>,
         rx: BcastReceiver<Message>,
-        alarms: WrappingVec<T>,
-        prev_alarm: AlarmTime,
+        alarms: HashMap<Weekday, HashMap<usize, Vec<usize>>>,
     }
 
-    impl AlarmManager<(u64, AlarmTime)> {
+    impl AlarmManager {
         pub fn new(tx: BcastSender<Message>, rx: BcastReceiver<Message>) -> Self {
-            let alarms = WrappingVec::new();
-            let prev_alarm = AlarmTime {
-                day: "Xxx".to_string(),
-                hours: 0,
-                minutes: 0,
-            };
+            let alarms: HashMap<Weekday, HashMap<usize, Vec<usize>>> = HashMap::new();
             Self {
                 tx,
                 rx,
-                alarms,
-                prev_alarm,
+                alarms
             }
         }
 
         pub fn run(mut self) {
-            debug!("alarm_manager:Running AlarmManager");
             tokio::spawn(async move {
                 loop {
-                    match self.rx.recv().await {
-                        Ok(i) => self.handle_message(i),
-                        Err(e) => debug!("{}", e),
-                    };
+                    tokio::select! {
+                        msg = self.rx.recv() => {
+                            match msg {
+                                Ok(i) => self.handle_message(i),
+                                Err(e) => debug!("{}", e),
+                            }
+                        }
+
+                        _ = tokio::time::sleep(Duration::from_secs(60)) => {
+                            self.handle_timer();
+                        }
+                    }
                 }
             });
         }
 
-        fn handle_message(&mut self, msg: Message) {
-            debug!("alarm_manager:{:?}", msg);
-            match msg.typ {
-                MessageType::CmdUpdateAlarms => {
-                    self.update_alarms(msg.payload);
-                    self.notify_next_alarm();
-                }
-                MessageType::CmdPlayAlarm => {
-                    play();
-                    self.update_prev_alarm();
-                    self.notify_next_alarm();
-                }
-                _ => debug!("alarm_manager::Unknown command"),
-            }
-        }
+        fn handle_timer(&self) {
+            debug!("alarm_manager: timer expiry");
+            let now = chrono::offset::Local::now();
+            let today = now.weekday() as i32;
 
-        fn update_alarms(&mut self, payload: Payload) {
-            let rules;
-            if let Payload::Rules(temp) = payload {
-                rules = temp;
-            } else {
-                return;
-            }
+			let now = Local::now();
+			let current_weekday: Weekday = now.weekday();
+			let current_hour: usize = now.hour() as usize;
+			let current_minute: usize = now.minute() as usize;
 
-            self.alarms.clear();
-
-            //first shut down alarms if any
-            let c = Message {
-                typ: MessageType::CmdShutdown,
-                payload: Payload::None,
-            };
-            self.tx.send(c).unwrap();
-
-            let alarms = get_alarms(&rules);
-            for (day, hours_map) in &alarms {
-                for (hours, minutes_vec) in hours_map {
-                    for minutes in minutes_vec {
-                        debug!("Day Hours Minutes: {} {} {}", day, hours, minutes);
-
-                        let t = AlarmTime {
-                            day: day.to_string(),
-                            hours: *hours,
-                            minutes: *minutes,
-                        };
-
-                        let a = Alarm::new(t.clone(), self.tx.clone(), self.tx.subscribe());
-
-                        self.alarms.push((a.seconds.try_into().unwrap(), t));
-                        a.run();
+			if let Some(hour_map) = self.alarms.get(&current_weekday) {
+				if let Some(minute_vec) = hour_map.get(&current_hour) {
+					if minute_vec.contains(&current_minute) {
+                        debug!("alarm_manager: playing alarm");
+                        play();
                     }
-                }
-            }
+				}
+			}
+		}
 
-            //we are sorting the alarms by time from current instance.
-            //By moving through these we will get the next alarmtime
-            //we will wrap around to first after reachin end of vector
-            self.alarms.sort_by_key(|tuple| tuple.0);
-        }
+		fn handle_message(&mut self, msg: Message) {
+			debug!("alarm_manager:{:?}", msg);
+			match msg.typ {
+				MessageType::CmdUpdateAlarms => {
+					self.update_alarms(msg.payload);
+				}
+				MessageType::CmdPlayAlarm => {
+					play();
+				}
+				_ => debug!("alarm_manager::Unknown command"),
+			}
+		}
 
-        fn notify_next_alarm(&mut self) {
-            debug!("alarm_manager::alarms{:?}", self.alarms);
+		fn update_alarms(&mut self, payload: Payload) {
+			let rules;
+			if let Payload::Rules(temp) = payload {
+				rules = temp;
+			} else {
+				return;
+			}
 
-            let prev = &self.prev_alarm;
+			self.alarms = get_alarms(&rules);
+		}
+	}
 
-            if let Some(next) = self.alarms.next() {
-                let c = Message {
-                    typ: MessageType::EvtNextAlarm,
-                    payload: Payload::Alarms((prev.clone(), next.1.clone())),
-                };
+	fn get_hours(s: usize, e: usize) -> Vec<usize> {
+		let mut hrs = Vec::new();
 
-                self.tx.send(c).unwrap();
-            }
-        }
+		let mut current_hour = s;
+		while current_hour <= e {
+			hrs.push(current_hour);
+			current_hour += 1;
+		}
 
-        fn update_prev_alarm(&mut self) {
-            if let Some(prev) = self.alarms.prev() {
-                self.prev_alarm = prev.1.clone();
-            }
-        }
-    }
+		hrs
+	}
 
-    fn get_hours(s: usize, e: usize) -> Vec<usize> {
-        let mut hrs = Vec::new();
+	fn get_alarms(rules: &[Rule]) -> HashMap<Weekday, HashMap<usize, Vec<usize>>> {
+		let mut alarms: HashMap<Weekday, HashMap<usize, Vec<usize>>> = HashMap::new();
 
-        let mut current_hour = s;
-        while current_hour <= e {
-            hrs.push(current_hour);
-            current_hour += 1;
-        }
+		for r in rules {
+			for d in &r.days {
+				let weekday = get_weekday(d).unwrap();
+				let hours = alarms.entry(weekday).or_insert_with(HashMap::new);
 
-        hrs
-    }
+				let s = r.from;
+				let e = r.to;
+				let f = r.interval;
+				let hrs = get_hours(s, e);
 
-    fn get_alarms(rules: &[Rule]) -> HashMap<String, HashMap<usize, Vec<usize>>> {
-        let mut alarms: HashMap<String, HashMap<usize, Vec<usize>>> = HashMap::new();
+				let mut i = 0;
+				let mut m = f;
+				let mut h;
 
-        for r in rules {
-            for d in &r.days {
-                let hours = alarms.entry(d.clone()).or_insert_with(HashMap::new);
+				loop {
+					let mut mins = Vec::new();
 
-                let s = r.from;
-                let e = r.to;
-                let f = r.interval;
-                let hrs = get_hours(s, e);
+					loop {
+						mins.push(m % 60);
+						m += f;
 
-                let mut i = 0;
-                let mut m = f;
-                let mut h;
+						if m - (60 * i) >= 60 {
+							h = hrs[i];
 
-                loop {
-                    let mut mins = Vec::new();
+							if f == 60 && h == s {
+								i += 1;
+								break;
+							}
 
-                    loop {
-                        mins.push(m % 60);
-                        m += f;
+							hours.entry(h).or_insert_with(Vec::new).extend(mins.iter());
+							debug!("{} h: {} mins: {:?}", d, h, mins);
 
-                        if m - (60 * i) >= 60 {
-                            h = hrs[i];
+							i += 1;
+							break;
+						}
+					}
 
-                            if f == 60 && h == s {
-                                i += 1;
-                                break;
-                            }
-
-                            hours.entry(h).or_insert_with(Vec::new).extend(mins.iter());
-                            debug!("{} h: {} mins: {:?}", d, h, mins);
-
-                            i += 1;
-                            break;
-                        }
-                    }
-
-                    if e == hrs[i] {
-                        if m % 60 == 0 {
-                            hours.entry(e).or_insert_with(|| vec![0]);
-                            debug!("{} h: {} mins: {:?}", d, e, hours[&e]);
-                        }
-                        break;
+					if e == hrs[i] {
+						if m % 60 == 0 {
+							hours.entry(e).or_insert_with(|| vec![0]);
+							debug!("{} h: {} mins: {:?}", d, e, hours[&e]);
+						}
+						break;
                     }
                 }
             }
         }
 
         alarms
+    } 
+
+    fn get_weekday(d: &str) -> Result<Weekday, String> {
+        match d {
+            "Mon" => Ok(Weekday::Mon),
+            "Tue" => Ok(Weekday::Tue),
+            "Wed" => Ok(Weekday::Wed),
+            "Thu" => Ok(Weekday::Thu),
+            "Fri" => Ok(Weekday::Fri),
+            "Sat" => Ok(Weekday::Sat),
+            "Sun" => Ok(Weekday::Sun),
+            _ => Err("Invalid weekday input".to_string()),
+        }
     }
 
     #[cfg(test)]
