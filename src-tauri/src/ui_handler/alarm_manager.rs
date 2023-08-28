@@ -14,6 +14,7 @@ mod alarm_manager {
     use log::debug;
     use std::collections::HashMap;
 
+    #[allow(dead_code)]
     pub struct AlarmManager {
         tx: BcastSender<Message>,
         rx: BcastReceiver<Message>,
@@ -48,8 +49,6 @@ mod alarm_manager {
         /// Recurring 1 minute timer
         fn handle_timer_expiry(&self) {
             debug!("alarm_manager: timer expiry");
-            let now = chrono::offset::Local::now();
-
             let now = Local::now();
             let current_weekday: Weekday = now.weekday();
             let current_hour: usize = now.hour() as usize;

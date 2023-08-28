@@ -37,12 +37,14 @@ mod ui_handler {
     }
 
     #[derive(Clone, Debug)]
+    #[allow(dead_code)]
     pub enum Payload {
         Rules(Vec<Rule>),
-        //None,
+        None,
     }
 
     #[derive(Clone, Debug, PartialEq)]
+    #[allow(dead_code)]
     pub enum MessageType {
         //from the UI
         CmdStartup,
@@ -51,9 +53,9 @@ mod ui_handler {
         EvtRulesApplied,
 
         //For alarm module
-        CmdShutdown,
+        //CmdShutdown,
         //received from alarm module
-        CmdPlayAlarm,
+        //CmdPlayAlarm,
 
         //For alarm manager
         CmdUpdateAlarms,

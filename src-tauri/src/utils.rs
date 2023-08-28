@@ -134,7 +134,7 @@ mod utils {
             let mut path = PathBuf::new();
             path.push(home_dir);
             path.push("Library");
-            path.push("TauriTimerDev");
+            path.push("com.68kilo.tab");
             return Some(path);
         }
 
