@@ -35,22 +35,9 @@ mod ui_handler {
     }
 
     #[derive(Clone, Debug)]
-    pub struct AlarmTime {
-        pub day: String,
-        pub hours: usize,
-        pub minutes: usize,
-    }
-
-    impl fmt::Display for AlarmTime {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "{}-{}-{}", self.day, self.hours, self.minutes)
-        }
-    }
-
-    #[derive(Clone, Debug)]
     pub enum Payload {
         Rules(Vec<Rule>),
-        None,
+        //None,
     }
 
     #[derive(Clone, Debug, PartialEq)]

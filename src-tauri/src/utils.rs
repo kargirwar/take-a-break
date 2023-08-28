@@ -90,8 +90,8 @@ mod utils {
 
         let logfile = RollingFileAppender::builder()
             .encoder(Box::new(PatternEncoder::new(
-                        "{d(%Y-%m-%d %H:%M:%S%.3f)} [{l}] - {m}{n}",
-                        )))
+                "{d(%Y-%m-%d %H:%M:%S%.3f)} [{l}] - {m}{n}",
+            )))
             .build(file_name, Box::new(compound_policy))
             .unwrap();
 
@@ -99,9 +99,9 @@ mod utils {
             .appender(Appender::builder().build("logfile", Box::new(logfile)))
             .build(
                 Root::builder()
-                .appender("logfile")
-                .build(LevelFilter::Debug),
-                )
+                    .appender("logfile")
+                    .build(LevelFilter::Debug),
+            )
             .unwrap();
 
         log4rs::init_config(config).unwrap();

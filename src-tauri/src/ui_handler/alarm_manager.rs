@@ -2,7 +2,7 @@ mod alarm_manager {
 
     use crate::player::play;
     use crate::{BcastReceiver, BcastSender, Message, MessageType, Payload, Rule};
-    use chrono::{offset::Local, Timelike, Datelike, Weekday};
+    use chrono::{offset::Local, Datelike, Timelike, Weekday};
     use std::time::Duration;
 
     use log::debug;
@@ -17,11 +17,7 @@ mod alarm_manager {
     impl AlarmManager {
         pub fn new(tx: BcastSender<Message>, rx: BcastReceiver<Message>) -> Self {
             let alarms: HashMap<Weekday, HashMap<usize, Vec<usize>>> = HashMap::new();
-            Self {
-                tx,
-                rx,
-                alarms
-            }
+            Self { tx, rx, alarms }
         }
 
         pub fn run(mut self) {
@@ -46,113 +42,112 @@ mod alarm_manager {
         fn handle_timer(&self) {
             debug!("alarm_manager: timer expiry");
             let now = chrono::offset::Local::now();
-            let today = now.weekday() as i32;
 
-			let now = Local::now();
-			let current_weekday: Weekday = now.weekday();
-			let current_hour: usize = now.hour() as usize;
-			let current_minute: usize = now.minute() as usize;
+            let now = Local::now();
+            let current_weekday: Weekday = now.weekday();
+            let current_hour: usize = now.hour() as usize;
+            let current_minute: usize = now.minute() as usize;
 
-			if let Some(hour_map) = self.alarms.get(&current_weekday) {
-				if let Some(minute_vec) = hour_map.get(&current_hour) {
-					if minute_vec.contains(&current_minute) {
+            if let Some(hour_map) = self.alarms.get(&current_weekday) {
+                if let Some(minute_vec) = hour_map.get(&current_hour) {
+                    if minute_vec.contains(&current_minute) {
                         debug!("alarm_manager: playing alarm");
                         play();
                     }
-				}
-			}
-		}
+                }
+            }
+        }
 
-		fn handle_message(&mut self, msg: Message) {
-			debug!("alarm_manager:{:?}", msg);
-			match msg.typ {
-				MessageType::CmdUpdateAlarms => {
-					self.update_alarms(msg.payload);
-				}
-				MessageType::CmdPlayAlarm => {
-					play();
-				}
-				_ => debug!("alarm_manager::Unknown command"),
-			}
-		}
+        fn handle_message(&mut self, msg: Message) {
+            debug!("alarm_manager:{:?}", msg);
+            match msg.typ {
+                MessageType::CmdUpdateAlarms => {
+                    self.update_alarms(msg.payload);
+                }
+                MessageType::CmdPlayAlarm => {
+                    play();
+                }
+                _ => debug!("alarm_manager::Unknown command"),
+            }
+        }
 
-		fn update_alarms(&mut self, payload: Payload) {
-			let rules;
-			if let Payload::Rules(temp) = payload {
-				rules = temp;
-			} else {
-				return;
-			}
+        fn update_alarms(&mut self, payload: Payload) {
+            let rules;
+            if let Payload::Rules(temp) = payload {
+                rules = temp;
+            } else {
+                return;
+            }
 
-			self.alarms = get_alarms(&rules);
-		}
-	}
+            self.alarms = get_alarms(&rules);
+        }
+    }
 
-	fn get_hours(s: usize, e: usize) -> Vec<usize> {
-		let mut hrs = Vec::new();
+    fn get_hours(s: usize, e: usize) -> Vec<usize> {
+        let mut hrs = Vec::new();
 
-		let mut current_hour = s;
-		while current_hour <= e {
-			hrs.push(current_hour);
-			current_hour += 1;
-		}
+        let mut current_hour = s;
+        while current_hour <= e {
+            hrs.push(current_hour);
+            current_hour += 1;
+        }
 
-		hrs
-	}
+        hrs
+    }
 
-	fn get_alarms(rules: &[Rule]) -> HashMap<Weekday, HashMap<usize, Vec<usize>>> {
-		let mut alarms: HashMap<Weekday, HashMap<usize, Vec<usize>>> = HashMap::new();
+    fn get_alarms(rules: &[Rule]) -> HashMap<Weekday, HashMap<usize, Vec<usize>>> {
+        let mut alarms: HashMap<Weekday, HashMap<usize, Vec<usize>>> = HashMap::new();
 
-		for r in rules {
-			for d in &r.days {
-				let weekday = get_weekday(d).unwrap();
-				let hours = alarms.entry(weekday).or_insert_with(HashMap::new);
+        for r in rules {
+            for d in &r.days {
+                let weekday = get_weekday(d).unwrap();
+                let hours = alarms.entry(weekday).or_insert_with(HashMap::new);
 
-				let s = r.from;
-				let e = r.to;
-				let f = r.interval;
-				let hrs = get_hours(s, e);
+                let s = r.from;
+                let e = r.to;
+                let f = r.interval;
+                let hrs = get_hours(s, e);
 
-				let mut i = 0;
-				let mut m = f;
-				let mut h;
+                let mut i = 0;
+                let mut m = f;
+                let mut h;
 
-				loop {
-					let mut mins = Vec::new();
+                loop {
+                    let mut mins = Vec::new();
 
-					loop {
-						mins.push(m % 60);
-						m += f;
+                    loop {
+                        mins.push(m % 60);
+                        m += f;
 
-						if m - (60 * i) >= 60 {
-							h = hrs[i];
+                        if m - (60 * i) >= 60 {
+                            h = hrs[i];
 
-							if f == 60 && h == s {
-								i += 1;
-								break;
-							}
+                            if f == 60 && h == s {
+                                i += 1;
+                                break;
+                            }
 
-							hours.entry(h).or_insert_with(Vec::new).extend(mins.iter());
-							debug!("{} h: {} mins: {:?}", d, h, mins);
+                            hours.entry(h).or_insert_with(Vec::new).extend(mins.iter());
+                            debug!("{} h: {} mins: {:?}", d, h, mins);
 
-							i += 1;
-							break;
-						}
-					}
+                            i += 1;
+                            break;
+                        }
+                    }
 
-					if e == hrs[i] {
-						if m % 60 == 0 {
-							hours.entry(e).or_insert_with(|| vec![0]);
-							debug!("{} h: {} mins: {:?}", d, e, hours[&e]);
-						}
-						break;
+                    if e == hrs[i] {
+                        if m % 60 == 0 {
+                            hours.entry(e).or_insert_with(|| vec![0]);
+                            debug!("{} h: {} mins: {:?}", d, e, hours[&e]);
+                        }
+                        break;
                     }
                 }
             }
         }
 
         alarms
-    } 
+    }
 
     fn get_weekday(d: &str) -> Result<Weekday, String> {
         match d {
@@ -194,7 +189,8 @@ mod alarm_manager {
             let rules = vec![rule1, rule2];
             let alarms = get_alarms(&rules);
             debug!("{:?}", alarms);
-            assert!(alarms.contains_key("Sun"));
+            assert!(alarms.contains_key(&Weekday::Tue));
+            assert!(alarms.contains_key(&Weekday::Wed));
         }
     }
 }
