@@ -1,4 +1,4 @@
-//! Implements core timer functionality. Starts a thread which 
+//! Implements core timer functionality. Starts a thread which
 //! wakes up every minute and checks if an alarm is to be played.
 //! CPU usage (on Mac) is not significant
 //! The tread runs throughout the life of the app. No need to handle
@@ -62,6 +62,12 @@ mod alarm_manager {
                     }
                 }
             }
+
+            if let Some(alarm) =
+                find_next_alarm(&self.alarms, current_weekday, current_hour, current_minute)
+            {
+                debug!("Next alarm at: {:?}", alarm);
+            }
         }
 
         /// Handles message from ui_handlers
@@ -87,6 +93,78 @@ mod alarm_manager {
         }
     }
 
+    fn find_next_alarm(
+        alarm_schedule: &HashMap<Weekday, HashMap<usize, Vec<usize>>>,
+        current_day: Weekday,
+        current_hour: usize,
+        current_minute: usize,
+    ) -> Option<(Weekday, usize, usize)> {
+        let mut current_day_to_check;
+        let mut next_alarm: Option<(Weekday, usize, usize)> = None;
+
+        // Start with current_day, check if alarms are scheduled after current time.
+        // Repeat for successive days until we wrap around to today
+
+        if let Some(hour_map) = alarm_schedule.get(&current_day) {
+            //hashmaps are not sorted. So first get sorted hours
+            let mut sorted_keys: Vec<usize> = hour_map.keys().cloned().collect();
+            sorted_keys.sort();
+
+            'hour_loop:for hour in &sorted_keys {
+                if let Some(mins) = hour_map.get(hour) {
+                    for min in mins.iter() {
+                        if *hour > current_hour {
+                            //mins are sorted. just pick up the first
+                            next_alarm = Some((current_day, *hour, *min));
+                            break 'hour_loop;
+                        } else if *hour == current_hour {
+                            if *min > current_minute {
+                                next_alarm = Some((current_day, *hour, *min));
+                                break 'hour_loop;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if next_alarm.is_some() {
+            //we found our next alarm on the same day
+            return next_alarm;
+        }
+
+        //try searching other days
+        current_day_to_check = current_day.succ();
+        loop {
+            if let Some(hour_map) = alarm_schedule.get(&current_day_to_check) {
+                let mut sorted_keys: Vec<usize> = hour_map.keys().cloned().collect();
+                sorted_keys.sort();
+
+                for hour in &sorted_keys {
+                    if let Some(mins) = hour_map.get(hour) {
+                        for min in mins.iter() {
+                            //mins are sorted. just pick up the first
+                            return Some((current_day_to_check, *hour, *min));
+                        }
+                    }
+                }
+            }
+
+            current_day_to_check = current_day_to_check.succ();
+
+            if current_day_to_check == current_day {
+                debug!("breaking");
+                break;
+            }
+        }
+
+        return next_alarm;
+    }
+
+    //fn find_next_for_today(hour_map: &HashMap<usize, Vec<usize>>) -> (Weekday, usize, usize) {
+        //return 
+    //}
+
     fn get_hours(s: usize, e: usize) -> Vec<usize> {
         let mut hrs = Vec::new();
 
@@ -99,7 +177,7 @@ mod alarm_manager {
         hrs
     }
 
-    /// For a set of rules, finds the hours and minutes for each day at which 
+    /// For a set of rules, finds the hours and minutes for each day at which
     /// alarm should be played. Assumes that rules are not overlapping
     fn get_alarms(rules: &[Rule]) -> HashMap<Weekday, HashMap<usize, Vec<usize>>> {
         let mut alarms: HashMap<Weekday, HashMap<usize, Vec<usize>>> = HashMap::new();
@@ -172,6 +250,7 @@ mod alarm_manager {
     mod tests {
         use super::*;
         use crate::utils::*;
+        use maplit::hashmap;
 
         #[test]
         fn test_get_alarms() {
@@ -197,6 +276,64 @@ mod alarm_manager {
             debug!("{:?}", alarms);
             assert!(alarms.contains_key(&Weekday::Tue));
             assert!(alarms.contains_key(&Weekday::Wed));
+        }
+
+        #[test]
+        fn test_next_alarm() {
+            setup_logger();
+            let rule1 = Rule {
+                serial: 1,
+                days: vec!["Fri".to_string()],
+                interval: 30,
+                from: 17,
+                to: 18,
+            };
+
+            let rule2 = Rule {
+                serial: 2,
+                days: vec!["Sun".to_string()],
+                interval: 30,
+                from: 19,
+                to: 20,
+            };
+
+            let rules = vec![rule1, rule2];
+            let alarms = get_alarms(&rules);
+
+            let expected = hashmap! {
+                Weekday::Fri => hashmap! {
+                    17 => vec![30],
+                    18 => vec![0],
+                },
+                // Add more weekdays and alarms as needed
+                Weekday::Sun => hashmap! {
+                    19 => vec![30],
+                    20 => vec![0],
+                },
+            };
+
+            assert_eq!(alarms, expected);
+
+            let mut next = find_next_alarm(&alarms, Weekday::Fri, 17, 58);
+            assert_eq!(next, Some((Weekday::Fri, 18, 0)));
+
+            next = find_next_alarm(&alarms, Weekday::Sat, 18, 0);
+            assert_eq!(next, Some((Weekday::Sun, 19, 30)));
+
+            next = find_next_alarm(&alarms, Weekday::Sun, 18, 0);
+            assert_eq!(next, Some((Weekday::Sun, 19, 30)));
+            
+            next = find_next_alarm(&alarms, Weekday::Sun, 19, 0);
+            assert_eq!(next, Some((Weekday::Sun, 19, 30)));
+            
+            next = find_next_alarm(&alarms, Weekday::Sun, 19, 20);
+            assert_eq!(next, Some((Weekday::Sun, 19, 30)));
+            
+            next = find_next_alarm(&alarms, Weekday::Sun, 19, 31);
+            assert_eq!(next, Some((Weekday::Sun, 20, 0)));
+            
+            next = find_next_alarm(&alarms, Weekday::Sun, 20, 31);
+            assert_eq!(next, Some((Weekday::Fri, 17, 30)));
         }
     }
 }

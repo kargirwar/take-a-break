@@ -1,9 +1,9 @@
 mod player {
     use crate::utils::*;
     //use log::debug;
-    use std::thread;
-    use rodio::{Decoder, OutputStream, source::{Source}};
+    use rodio::{source::Source, Decoder, OutputStream};
     use std::io::Cursor;
+    use std::thread;
 
     const BEEP_INTERVAL: u64 = 1000; //milliseconds
     const PLAY_DURATION: u64 = 1000;

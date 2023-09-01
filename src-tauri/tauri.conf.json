@@ -57,7 +57,7 @@
       {
         "fullscreen": false,
         "height": 600,
-        "resizable": false,
+        "resizable": true,
         "title": "",
         "width": 600
       }

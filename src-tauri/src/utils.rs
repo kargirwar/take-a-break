@@ -5,6 +5,7 @@ mod utils {
     use std::io::Cursor;
     use std::process::Command;
 
+    #[cfg(any(feature = "debug-logs", feature = "release-logs"))]
     use dirs;
     use log::LevelFilter;
     use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
@@ -83,6 +84,7 @@ mod utils {
     pub fn setup_logger() {
         //setup rotation
         let file_name = get_log_file_name();
+        println!("file_name: {}", file_name);
         let window_size = 1; // log0, log1, log2
         let fixed_window_roller = FixedWindowRoller::builder()
             .build(&(file_name.clone() + "{}"), window_size)
@@ -129,16 +131,43 @@ mod utils {
         return "".to_string();
     }
 
+    //fn get_app_dir() -> Option<PathBuf> {
+    //if let Some(home_dir) = dirs::home_dir() {
+    //let mut path = PathBuf::new();
+    //path.push(home_dir);
+    //path.push("Library");
+    //path.push("com.68kilo.tab");
+    //return Some(path);
+    //}
+    //
+    //return None;
+    //}
+
     fn get_app_dir() -> Option<PathBuf> {
-        if let Some(home_dir) = dirs::home_dir() {
-            let mut path = PathBuf::new();
-            path.push(home_dir);
-            path.push("Library");
-            path.push("com.68kilo.tab");
-            return Some(path);
+        #[cfg(feature = "debug_logs")]
+        {
+            if let Some(home_dir) = dirs::home_dir() {
+                let mut path = PathBuf::new();
+                path.push(home_dir);
+                path.push("Library");
+                path.push("com.68kilo.tab_debug"); // Debug-specific path
+                return Some(path);
+            }
         }
 
-        return None;
+        #[cfg(feature = "release_logs")]
+        {
+            if let Some(home_dir) = dirs::home_dir() {
+                let mut path = PathBuf::new();
+                path.push(home_dir);
+                path.push("Library");
+                path.push("com.68kilo.tab"); // Release-specific path
+                return Some(path);
+            }
+        }
+
+        // Default path if no features are enabled
+        None
     }
 }
 
