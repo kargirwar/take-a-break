@@ -93,8 +93,9 @@ mod alarm_manager {
         }
     }
 
+    /// Given a set of alarms and current hour and minutes, determine next scheduled alarm
     fn find_next_alarm(
-        alarm_schedule: &HashMap<Weekday, HashMap<usize, Vec<usize>>>,
+        alarms: &HashMap<Weekday, HashMap<usize, Vec<usize>>>,
         current_day: Weekday,
         current_hour: usize,
         current_minute: usize,
@@ -103,28 +104,10 @@ mod alarm_manager {
         let mut next_alarm: Option<(Weekday, usize, usize)> = None;
 
         // Start with current_day, check if alarms are scheduled after current time.
-        // Repeat for successive days until we wrap around to today
-
-        if let Some(hour_map) = alarm_schedule.get(&current_day) {
-            //hashmaps are not sorted. So first get sorted hours
-            let mut sorted_keys: Vec<usize> = hour_map.keys().cloned().collect();
-            sorted_keys.sort();
-
-            'hour_loop:for hour in &sorted_keys {
-                if let Some(mins) = hour_map.get(hour) {
-                    for min in mins.iter() {
-                        if *hour > current_hour {
-                            //mins are sorted. just pick up the first
-                            next_alarm = Some((current_day, *hour, *min));
-                            break 'hour_loop;
-                        } else if *hour == current_hour {
-                            if *min > current_minute {
-                                next_alarm = Some((current_day, *hour, *min));
-                                break 'hour_loop;
-                            }
-                        }
-                    }
-                }
+        // Repeat for successive days until we wrap around to current_day
+        if let Some(hour_map) = alarms.get(&current_day) {
+            if let Some(hour_mins) = find_next_for_today(hour_map, current_hour, current_minute) {
+                next_alarm = Some((current_day, hour_mins.0, hour_mins.1));
             }
         }
 
@@ -136,7 +119,7 @@ mod alarm_manager {
         //try searching other days
         current_day_to_check = current_day.succ();
         loop {
-            if let Some(hour_map) = alarm_schedule.get(&current_day_to_check) {
+            if let Some(hour_map) = alarms.get(&current_day_to_check) {
                 let mut sorted_keys: Vec<usize> = hour_map.keys().cloned().collect();
                 sorted_keys.sort();
 
@@ -153,7 +136,7 @@ mod alarm_manager {
             current_day_to_check = current_day_to_check.succ();
 
             if current_day_to_check == current_day {
-                debug!("breaking");
+                //wrapped around
                 break;
             }
         }
@@ -161,9 +144,35 @@ mod alarm_manager {
         return next_alarm;
     }
 
-    //fn find_next_for_today(hour_map: &HashMap<usize, Vec<usize>>) -> (Weekday, usize, usize) {
-        //return 
-    //}
+    fn find_next_for_today(
+        hour_map: &HashMap<usize, Vec<usize>>,
+        current_hour: usize,
+        current_minute: usize,
+    ) -> Option<(usize, usize)> {
+        let mut next_alarm: Option<(usize, usize)> = None;
+        //hashmaps are not sorted. So first get sorted hours
+        let mut sorted_keys: Vec<usize> = hour_map.keys().cloned().collect();
+        sorted_keys.sort();
+
+        'hour_loop: for hour in &sorted_keys {
+            if let Some(mins) = hour_map.get(hour) {
+                for min in mins.iter() {
+                    if *hour > current_hour {
+                        //mins are sorted. just pick up the first
+                        next_alarm = Some((*hour, *min));
+                        break 'hour_loop;
+                    } else if *hour == current_hour {
+                        if *min > current_minute {
+                            next_alarm = Some((*hour, *min));
+                            break 'hour_loop;
+                        }
+                    }
+                }
+            }
+        }
+
+        return next_alarm;
+    }
 
     fn get_hours(s: usize, e: usize) -> Vec<usize> {
         let mut hrs = Vec::new();
@@ -274,8 +283,23 @@ mod alarm_manager {
             let rules = vec![rule1, rule2];
             let alarms = get_alarms(&rules);
             debug!("{:?}", alarms);
+
+            let mins: Vec<usize> = (1..=59).collect();
+            let expected = hashmap! {
+                Weekday::Tue => hashmap! {
+                    18 => mins.clone(),
+                    19 => vec![0, 30],
+                    20 => vec![0],
+                },
+                Weekday::Wed => hashmap! {
+                    18 => mins.clone(),
+                    19 => vec![0],
+                },
+            };
+
             assert!(alarms.contains_key(&Weekday::Tue));
             assert!(alarms.contains_key(&Weekday::Wed));
+            assert_eq!(alarms, expected);
         }
 
         #[test]
@@ -322,16 +346,16 @@ mod alarm_manager {
 
             next = find_next_alarm(&alarms, Weekday::Sun, 18, 0);
             assert_eq!(next, Some((Weekday::Sun, 19, 30)));
-            
+
             next = find_next_alarm(&alarms, Weekday::Sun, 19, 0);
             assert_eq!(next, Some((Weekday::Sun, 19, 30)));
-            
+
             next = find_next_alarm(&alarms, Weekday::Sun, 19, 20);
             assert_eq!(next, Some((Weekday::Sun, 19, 30)));
-            
+
             next = find_next_alarm(&alarms, Weekday::Sun, 19, 31);
             assert_eq!(next, Some((Weekday::Sun, 20, 0)));
-            
+
             next = find_next_alarm(&alarms, Weekday::Sun, 20, 31);
             assert_eq!(next, Some((Weekday::Fri, 17, 30)));
         }
