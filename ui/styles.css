@@ -129,6 +129,9 @@ body, html {
 	padding:5px;
 }
 
+#dialog {
+	color:white;
+}
 .tab-content {
 	display: none
 }
@@ -247,14 +250,14 @@ body, html {
 
 #help-content .card {
 	padding:1em;
-	height: 80%;
+	height: 75%;
 	overflow-y:scroll;
 }
 
 .title-bar {
 	width:100%;
 	display:grid;
-	grid-template-columns:1fr 1fr 1fr 1fr;
+	grid-template-columns:1fr 1.5fr 1.5fr 1fr;
 	margin-bottom:20px;
 	height:2em;
 }
@@ -262,6 +265,7 @@ body, html {
 .total-rules {
 	display:flex;
 	align-items:center;
+	justify-content:center;
 	color: #fff;
 	padding:5px;
 	background-color: hsl(141, 53%, 53%);
@@ -270,6 +274,7 @@ body, html {
 .next {
 	display:flex;
 	align-items:center;
+	justify-content:center;
 	color: #fff;
 	padding:5px;
 	background-color: hsl(204, 86%, 53%);
@@ -277,6 +282,7 @@ body, html {
 
 .prev {
 	display:flex;
+	justify-content:center;
 	align-items:center;
 	padding:5px;
 	color: #fff;
@@ -286,7 +292,14 @@ body, html {
 .about {
 	display:flex;
 	align-items:center;
+	justify-content:center;
 	padding:5px;
 	color: #fff;
 	background-color:hsl(171, 100%, 41%);
+	cursor:pointer;
+}
+
+.version {
+	margin-top:10px;
+	margin-bottom:10px;
 }

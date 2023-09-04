@@ -35,8 +35,8 @@ class App {
 
         PubSub.subscribe(Constants.EVENT_NEXT_ALARM, (e) => {
             Logger.Log(TAG, JSON.stringify(e.alarms));
-            this.next = e.alarms['next-alarm'];
-            this.prev = e.alarms['prev-alarm'];
+            this.next = e.alarms['next-alarm'] ?? null;
+            this.prev = e.alarms['prev-alarm'] ?? null;
             this.updateTitleBar();
         });
 
@@ -58,11 +58,15 @@ class App {
         this.$numOfRules.innerHTML = this.rules.length;
 
         if (this.next) {
-            this.$nextAlarm.innerHTML = `${this.next.day} ${this.next.hour}:${this.next.min}`;
+            this.$nextAlarm.innerHTML = 
+                `${this.next.day} ${Utils.zeroPad(this.next.hour)}:${Utils.zeroPad(this.next.min)}`;
+        } else {
+            this.$nextAlarm.innerHTML = "__";
         }
 
         if (this.prev) {
-            this.$prevAlarm.innerHTML = `${this.prev.day} ${this.prev.hour}:${this.prev.min}`;
+            this.$prevAlarm.innerHTML = 
+                `${this.prev.day} ${Utils.zeroPad(this.prev.hour)}:${Utils.zeroPad(this.prev.min)}`;
             return;
         }
 

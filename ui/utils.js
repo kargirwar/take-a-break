@@ -26,7 +26,7 @@ class Utils {
         let $dialog = $root.querySelector('#dialog'); 
         $dialog.innerHTML = msg;
         $dialog.classList.remove('is-info');
-        $dialog.classList.add('is-warning');
+        $dialog.classList.add('has-background-warning-dark');
 
         setTimeout(() => {
             $root.style.display = 'none';
@@ -38,7 +38,7 @@ class Utils {
         $root.style.display = 'flex';
         let $dialog = $root.querySelector('#dialog'); 
         $dialog.innerHTML = msg;
-        $dialog.classList.remove('is-warning');
+        $dialog.classList.remove('has-background-warning-dark');
         $dialog.classList.add('is-info');
         //$dialog.style.background = 'blue'
 
@@ -63,6 +63,11 @@ class Utils {
         }
 
         return true;
+    }
+
+    static zeroPad(value) {
+        // Use padStart to ensure the string has at least 2 characters, padding with "0" if needed.
+        return String(value).padStart(2, '0');
     }
 }
 

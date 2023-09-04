@@ -188,7 +188,11 @@ mod ui_handler {
                             "prev-alarm": self.prev_alarm
                         })
                     }
-                    None => json!(null),
+                    None => 
+                        json!({
+                            "next-alarm": null,
+                            "prev-alarm": null
+                        })
                 },
                 _ => return,
             };
