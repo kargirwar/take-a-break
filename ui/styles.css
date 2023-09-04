@@ -246,11 +246,13 @@ body, html {
 #help-content {
 	height:100%;
 	padding:5px;
+	display:grid;
+	grid-template-rows:1fr 10fr 2fr;
+	row-gap:10px;
 }
 
 #help-content .card {
 	padding:1em;
-	height: 75%;
 	overflow-y:scroll;
 }
 
@@ -300,6 +302,5 @@ body, html {
 }
 
 .version {
-	margin-top:10px;
-	margin-bottom:10px;
+	overflow-y:scroll;
 }

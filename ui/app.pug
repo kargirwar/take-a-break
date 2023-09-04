@@ -1,18 +1,12 @@
 script#app-template(type="code")
     #app-content
-        //.tabs.is-toggle.is-fullwidth
-            //ul
-                //li.is-active
-                    //a.rules Rules
-                //li
-                    //a.status Status
         .container
             .title-bar
                 .total-rules.is-success.has-text-weight-bold 
                     span Rules:&nbsp;
                     span#num-of-rules
                 .next.is-info.has-text-weight-bold 
-                    span Next:&nbsp;
+                    span Next #[sup #] :&nbsp;
                     span#next-alarm
                 .prev.has-text-weight-bold
                     span Prev:&nbsp;
