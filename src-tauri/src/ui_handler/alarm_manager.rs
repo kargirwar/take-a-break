@@ -10,7 +10,7 @@ mod alarm_manager {
     use super::alarm_utils::*;
     use crate::player::play;
     use crate::Alarm;
-    use crate::{BcastReceiver, BcastSender, Message, MessageType, Payload, Rule};
+    use crate::{BcastReceiver, BcastSender, Message, MessageType, Payload};
     use chrono::{offset::Local, Datelike, Timelike, Weekday};
     use std::time::Duration;
 
@@ -65,10 +65,10 @@ mod alarm_manager {
 
                         let c = Message {
                             typ: MessageType::EvtPlayingAlarm,
-                            payload: Payload::Alarm(Some(Alarm{
+                            payload: Payload::Alarm(Some(Alarm {
                                 day: current_weekday,
                                 hour: current_hour,
-                                min: current_minute
+                                min: current_minute,
                             })),
                         };
 
@@ -101,10 +101,10 @@ mod alarm_manager {
             let c = Message {
                 typ: MessageType::EvtNextAlarm,
                 payload: Payload::Alarm(find_next_alarm(
-                        &self.alarms,
-                        current_weekday,
-                        current_hour,
-                        current_minute,
+                    &self.alarms,
+                    current_weekday,
+                    current_hour,
+                    current_minute,
                 )),
             };
 
@@ -127,6 +127,7 @@ mod alarm_manager {
     mod tests {
         use super::*;
         use crate::utils::*;
+        use crate::Rule;
         use maplit::hashmap;
 
         #[test]

@@ -95,7 +95,7 @@ mod ui_handler {
         pub payload: Payload,
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq)]
     pub struct Alarm {
         pub day: Weekday,
         pub hour: usize,
@@ -175,7 +175,7 @@ mod ui_handler {
             match msg.typ {
                 MessageType::EvtNextAlarm => self.handle_next_alarm(msg.payload),
                 MessageType::EvtPlayingAlarm => self.handle_playing_alarm(msg.payload),
-                _ => ()
+                _ => (),
             }
         }
 
@@ -205,7 +205,7 @@ mod ui_handler {
                     Some(alarm) => {
                         self.prev_alarm = Some(alarm);
                     }
-                    None => ()
+                    None => (),
                 },
                 _ => return,
             };
