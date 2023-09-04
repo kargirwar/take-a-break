@@ -41,15 +41,12 @@ mod ui_handler {
     }
 
     #[derive(Clone, Debug)]
-    #[allow(dead_code)]
     pub enum Payload {
         Rules(Vec<Rule>),
         Alarm(Option<Alarm>),
-        None,
     }
 
     #[derive(Clone, Debug, PartialEq)]
-    #[allow(dead_code)]
     pub enum MessageType {
         //from the UI
         CmdStartup,

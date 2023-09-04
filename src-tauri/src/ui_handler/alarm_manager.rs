@@ -17,7 +17,6 @@ mod alarm_manager {
     use log::debug;
     use std::collections::HashMap;
 
-    #[allow(dead_code)]
     pub struct AlarmManager {
         tx: BcastSender<Message>,
         rx: BcastReceiver<Message>,
