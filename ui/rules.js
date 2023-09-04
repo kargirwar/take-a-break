@@ -11,18 +11,10 @@ class Rules {
         this.rootTemplate = document.getElementById('rules-template').innerHTML;
         this.ruleTemplate = document.getElementById('rule-template').innerHTML;
         this.rules = [];
+        this.bindHandlers();
     }
 
-    load(rules) {
-        this.$root.replaceChildren(Utils.generateNode(this.rootTemplate, {}));
-        this.$message = this.$root.querySelector('.no-rules-message');
-        this.$title = this.$root.querySelector('.rule-title');
-
-        /*fix list height for scrolling*/
-        let parentDims = this.$root.getBoundingClientRect();
-        this.$list = this.$root.querySelector('#rules-content');
-        this.$list.style.height = parentDims.height + 'px';
-
+    bindHandlers() {
         this.$root.addEventListener('click', (e) => {
             let $n = e.target;
             if ($n.classList.contains('del-rule')) {
@@ -75,12 +67,17 @@ class Rules {
             this.addRule();
             this.updateSerial();
         });
+    }
 
-        this.$root.querySelector('.help').addEventListener('click', (e) => {
-            Logger.Log(TAG, "help");
-            Logger.Log(TAG, "before help: " + JSON.stringify(this.rules));
-            PubSub.publish(Constants.PAGE_HELP, {});
-        });
+    load(rules) {
+        this.$root.replaceChildren(Utils.generateNode(this.rootTemplate, {}));
+        this.$message = this.$root.querySelector('.no-rules-message');
+        this.$title = this.$root.querySelector('.rule-title');
+
+        /*fix list height for scrolling*/
+        let parentDims = this.$root.getBoundingClientRect();
+        this.$list = this.$root.querySelector('#rules-content');
+        this.$list.style.height = parentDims.height + 'px';
 
         this.loadRules(rules);
     }

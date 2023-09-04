@@ -250,3 +250,43 @@ body, html {
 	height: 80%;
 	overflow-y:scroll;
 }
+
+.title-bar {
+	width:100%;
+	display:grid;
+	grid-template-columns:1fr 1fr 1fr 1fr;
+	margin-bottom:20px;
+	height:2em;
+}
+
+.total-rules {
+	display:flex;
+	align-items:center;
+	color: #fff;
+	padding:5px;
+	background-color: hsl(141, 53%, 53%);
+}
+
+.next {
+	display:flex;
+	align-items:center;
+	color: #fff;
+	padding:5px;
+	background-color: hsl(204, 86%, 53%);
+}
+
+.prev {
+	display:flex;
+	align-items:center;
+	padding:5px;
+	color: #fff;
+	background-color: hsl(217, 71%, 53%);
+}
+
+.about {
+	display:flex;
+	align-items:center;
+	padding:5px;
+	color: #fff;
+	background-color:hsl(171, 100%, 41%);
+}

@@ -77,6 +77,8 @@ mod alarm_manager {
                 }
             }
 
+            //notifying next alarm every minute helps to minimize
+            //the time wrong value is displayed after waking up from sleep
             self.notify_next_alarm();
         }
 

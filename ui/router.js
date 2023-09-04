@@ -20,9 +20,11 @@ class Router {
 
     init() {
         this.$container = document.getElementById('container');
-        this.app = new App(this.$container);
-        this.help = new Help(this.$container);
 
+        this.app = new App(this.$container);
+        this.app.load();
+
+        this.help = new Help(this.$container);
 
         PubSub.subscribe(Constants.PAGE_HELP, (e) => {
             this.help.load();

@@ -7,6 +7,18 @@ script#app-template(type="code")
                 //li
                     //a.status Status
         .container
+            .title-bar
+                .total-rules.is-success.has-text-weight-bold 
+                    span Rules:
+                    span#num-of-rules
+                .next.is-info.has-text-weight-bold 
+                    span Next:
+                    span#next-alarm
+                .prev.has-text-weight-bold
+                    span Prev:
+                    span#prev-alarm
+                .about.has-text-weight-bold About
+
             .tab-content.rules Rules content
             .tab-content.status Status content
 
