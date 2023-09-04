@@ -5,10 +5,14 @@ mod ui_handler {
 
     use super::alarm_manager::*;
     use crate::utils::*;
+    use chrono::Weekday;
     use log::debug;
+    use serde::ser::SerializeStruct;
     use serde::Deserialize;
     use serde::Serialize;
+    use serde::Serializer;
     use serde_json::json;
+    use serde_json::Value;
     use std::fmt;
     use std::fs::{File, OpenOptions};
     use std::io::{Read, Write};
@@ -40,6 +44,7 @@ mod ui_handler {
     #[allow(dead_code)]
     pub enum Payload {
         Rules(Vec<Rule>),
+        Alarm(Option<Alarm>),
         None,
     }
 
@@ -61,6 +66,7 @@ mod ui_handler {
         CmdUpdateAlarms,
         //From alarm manager
         EvtNextAlarm,
+        EvtPlayingAlarm,
     }
 
     impl MessageType {
@@ -89,6 +95,26 @@ mod ui_handler {
         pub payload: Payload,
     }
 
+    #[derive(Clone, Debug)]
+    pub struct Alarm {
+        pub day: Weekday,
+        pub hour: usize,
+        pub min: usize,
+    }
+
+    impl Serialize for Alarm {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let mut state = serializer.serialize_struct("Alarm", 3)?;
+            state.serialize_field("day", &format!("{:?}", self.day))?;
+            state.serialize_field("hour", &self.hour)?;
+            state.serialize_field("min", &self.min)?;
+            state.end()
+        }
+    }
+
     pub struct UiHandler {
         ui_rx: Receiver<String>,
         win_handle: AppHandle<Wry>,
@@ -97,6 +123,7 @@ mod ui_handler {
         am_tx: BcastSender<Message>,
         am_rx: BcastReceiver<Message>,
         rules: Vec<Rule>,
+        prev_alarm: Option<Alarm>,
     }
 
     impl UiHandler {
@@ -108,6 +135,7 @@ mod ui_handler {
             am.run();
 
             let rules = Self::read_rules();
+            let prev_alarm = None;
 
             Self {
                 ui_rx,
@@ -115,6 +143,7 @@ mod ui_handler {
                 am_tx,
                 am_rx,
                 rules,
+                prev_alarm,
             }
         }
 
@@ -142,14 +171,44 @@ mod ui_handler {
             });
         }
 
-        fn handle_am_message(&self, msg: Message) {
-            let payload = if let MessageType::EvtNextAlarm = msg.typ {
-                msg.payload
-            } else {
-                return;
+        fn handle_am_message(&mut self, msg: Message) {
+            match msg.typ {
+                MessageType::EvtNextAlarm => self.handle_next_alarm(msg.payload),
+                MessageType::EvtPlayingAlarm => self.handle_playing_alarm(msg.payload),
+                _ => ()
+            }
+        }
+
+        fn handle_next_alarm(&self, payload: Payload) {
+            let json: Value = match payload {
+                Payload::Alarm(alarm) => match alarm {
+                    Some(alarm) => {
+                        json!({
+                            "next-alarm": alarm,
+                            "prev-alarm": self.prev_alarm
+                        })
+                    }
+                    None => json!(null),
+                },
+                _ => return,
             };
 
-            debug!("handle_am_message: {:?}", payload);
+            //inform UI
+            self.win_handle
+                .emit_all(&MessageType::EvtNextAlarm.to_string(), json.to_string())
+                .unwrap();
+        }
+
+        fn handle_playing_alarm(&mut self, payload: Payload) {
+            match payload {
+                Payload::Alarm(alarm) => match alarm {
+                    Some(alarm) => {
+                        self.prev_alarm = Some(alarm);
+                    }
+                    None => ()
+                },
+                _ => return,
+            };
         }
 
         fn handle_ui_message(&self, msg: String) {

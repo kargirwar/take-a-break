@@ -8,6 +8,12 @@ mod player {
     const BEEP_INTERVAL: u64 = 1000; //milliseconds
     const PLAY_DURATION: u64 = 1000;
 
+    #[cfg(feature = "debug")]
+    const MAX_TIMES: u64 = 1;
+
+    #[cfg(not(feature = "debug"))]
+    const MAX_TIMES: u64 = 5;
+
     pub fn play() {
         match is_locked() {
             LockedState::Locked => return,
@@ -21,7 +27,7 @@ mod player {
         let source = Decoder::new(cursor).unwrap();
         let buffered = source.buffered();
 
-        for _ in 0..5 {
+        for _ in 0..MAX_TIMES {
             let sh = stream_handle.clone();
             let src = buffered.clone();
 

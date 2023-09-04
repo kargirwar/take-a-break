@@ -1,8 +1,9 @@
 mod alarm_utils {
-    use std::collections::HashMap;
-    use log::debug;
-    use chrono::Weekday;
+    use crate::Alarm;
     use crate::Rule;
+    use chrono::Weekday;
+    use log::debug;
+    use std::collections::HashMap;
 
     /// Given a set of alarms and current hour and minutes, determine next scheduled alarm
     pub fn find_next_alarm(
@@ -10,15 +11,20 @@ mod alarm_utils {
         current_day: Weekday,
         current_hour: usize,
         current_minute: usize,
-        ) -> Option<(Weekday, usize, usize)> {
+    ) -> Option<Alarm> {
         let mut current_day_to_check;
-        let mut next_alarm: Option<(Weekday, usize, usize)> = None;
+        let mut next_alarm: Option<Alarm> = None;
 
         // Start with current_day, check if alarms are scheduled after current time.
         // Repeat for successive days until we wrap around to current_day
         if let Some(hour_map) = alarms.get(&current_day) {
             if let Some(hour_mins) = find_next_for_today(hour_map, current_hour, current_minute) {
-                next_alarm = Some((current_day, hour_mins.0, hour_mins.1));
+                //next_alarm = Some((current_day, hour_mins.0, hour_mins.1));
+                next_alarm = Some(Alarm {
+                    day: current_day,
+                    hour: hour_mins.0,
+                    min: hour_mins.1,
+                });
             }
         }
 
@@ -29,6 +35,7 @@ mod alarm_utils {
 
         //try searching other days
         current_day_to_check = current_day.succ();
+        let mut days = 0;
         loop {
             if let Some(hour_map) = alarms.get(&current_day_to_check) {
                 let mut sorted_keys: Vec<usize> = hour_map.keys().cloned().collect();
@@ -38,7 +45,11 @@ mod alarm_utils {
                     if let Some(mins) = hour_map.get(hour) {
                         for min in mins.iter() {
                             //mins are sorted. just pick up the first
-                            return Some((current_day_to_check, *hour, *min));
+                            return Some(Alarm {
+                                day: current_day_to_check,
+                                hour: *hour,
+                                min: *min,
+                            });
                         }
                     }
                 }
@@ -46,7 +57,8 @@ mod alarm_utils {
 
             current_day_to_check = current_day_to_check.succ();
 
-            if current_day_to_check == current_day {
+            days += 1;
+            if days == 8 {
                 //wrapped around
                 break;
             }
@@ -59,7 +71,7 @@ mod alarm_utils {
         hour_map: &HashMap<usize, Vec<usize>>,
         current_hour: usize,
         current_minute: usize,
-        ) -> Option<(usize, usize)> {
+    ) -> Option<(usize, usize)> {
         let mut next_alarm: Option<(usize, usize)> = None;
         //hashmaps are not sorted. So first get sorted hours
         let mut sorted_keys: Vec<usize> = hour_map.keys().cloned().collect();
@@ -165,6 +177,5 @@ mod alarm_utils {
             _ => Err("Invalid weekday input".to_string()),
         }
     }
-
 }
 pub use alarm_utils::*;

@@ -5,7 +5,6 @@ mod utils {
     use std::io::Cursor;
     use std::process::Command;
 
-    #[cfg(any(feature = "debug-logs", feature = "release-logs"))]
     use dirs;
     use log::LevelFilter;
     use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
@@ -131,20 +130,8 @@ mod utils {
         return "".to_string();
     }
 
-    //fn get_app_dir() -> Option<PathBuf> {
-    //if let Some(home_dir) = dirs::home_dir() {
-    //let mut path = PathBuf::new();
-    //path.push(home_dir);
-    //path.push("Library");
-    //path.push("com.68kilo.tab");
-    //return Some(path);
-    //}
-    //
-    //return None;
-    //}
-
     fn get_app_dir() -> Option<PathBuf> {
-        #[cfg(feature = "debug_logs")]
+        #[cfg(feature = "debug")]
         {
             if let Some(home_dir) = dirs::home_dir() {
                 let mut path = PathBuf::new();
@@ -155,7 +142,7 @@ mod utils {
             }
         }
 
-        #[cfg(feature = "release_logs")]
+        #[cfg(not(feature = "debug"))]
         {
             if let Some(home_dir) = dirs::home_dir() {
                 let mut path = PathBuf::new();

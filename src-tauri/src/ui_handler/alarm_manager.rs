@@ -7,11 +7,12 @@
 mod alarm_utils;
 mod alarm_manager {
 
+    use super::alarm_utils::*;
     use crate::player::play;
+    use crate::Alarm;
     use crate::{BcastReceiver, BcastSender, Message, MessageType, Payload, Rule};
     use chrono::{offset::Local, Datelike, Timelike, Weekday};
     use std::time::Duration;
-    use super::alarm_utils::*;
 
     use log::debug;
     use std::collections::HashMap;
@@ -61,15 +62,22 @@ mod alarm_manager {
                     if minute_vec.contains(&current_minute) {
                         debug!("alarm_manager: playing alarm");
                         play();
+
+                        let c = Message {
+                            typ: MessageType::EvtPlayingAlarm,
+                            payload: Payload::Alarm(Some(Alarm{
+                                day: current_weekday,
+                                hour: current_hour,
+                                min: current_minute
+                            })),
+                        };
+
+                        self.tx.send(c).unwrap();
                     }
                 }
             }
 
-            if let Some(alarm) =
-                find_next_alarm(&self.alarms, current_weekday, current_hour, current_minute)
-            {
-                debug!("Next alarm at: {:?}", alarm);
-            }
+            self.notify_next_alarm();
         }
 
         /// Handles message from ui_handlers
@@ -78,9 +86,29 @@ mod alarm_manager {
             match msg.typ {
                 MessageType::CmdUpdateAlarms => {
                     self.update_alarms(msg.payload);
+                    self.notify_next_alarm();
                 }
                 _ => debug!("alarm_manager::Unknown command"),
             }
+        }
+
+        fn notify_next_alarm(&self) {
+            let now = Local::now();
+            let current_weekday: Weekday = now.weekday();
+            let current_hour: usize = now.hour() as usize;
+            let current_minute: usize = now.minute() as usize;
+
+            let c = Message {
+                typ: MessageType::EvtNextAlarm,
+                payload: Payload::Alarm(find_next_alarm(
+                        &self.alarms,
+                        current_weekday,
+                        current_hour,
+                        current_minute,
+                )),
+            };
+
+            self.tx.send(c).unwrap();
         }
 
         fn update_alarms(&mut self, payload: Payload) {
@@ -143,7 +171,7 @@ mod alarm_manager {
         }
 
         #[test]
-        fn test_next_alarm() {
+        fn test_next_1() {
             setup_logger();
             let rule1 = Rule {
                 serial: 1,
@@ -178,26 +206,96 @@ mod alarm_manager {
 
             assert_eq!(alarms, expected);
 
-            let mut next = find_next_alarm(&alarms, Weekday::Fri, 17, 58);
-            assert_eq!(next, Some((Weekday::Fri, 18, 0)));
+            assert_eq!(
+                find_next_alarm(&alarms, Weekday::Fri, 17, 58),
+                Some(Alarm {
+                    day: Weekday::Fri,
+                    hour: 18,
+                    min: 0
+                })
+            );
+            assert_eq!(
+                find_next_alarm(&alarms, Weekday::Sat, 18, 0),
+                Some(Alarm {
+                    day: Weekday::Sun,
+                    hour: 19,
+                    min: 30
+                })
+            );
+            assert_eq!(
+                find_next_alarm(&alarms, Weekday::Sun, 18, 0),
+                Some(Alarm {
+                    day: Weekday::Sun,
+                    hour: 19,
+                    min: 30
+                })
+            );
+            assert_eq!(
+                find_next_alarm(&alarms, Weekday::Sun, 19, 0),
+                Some(Alarm {
+                    day: Weekday::Sun,
+                    hour: 19,
+                    min: 30
+                })
+            );
+            assert_eq!(
+                find_next_alarm(&alarms, Weekday::Sun, 19, 20),
+                Some(Alarm {
+                    day: Weekday::Sun,
+                    hour: 19,
+                    min: 30
+                })
+            );
+            assert_eq!(
+                find_next_alarm(&alarms, Weekday::Sun, 19, 31),
+                Some(Alarm {
+                    day: Weekday::Sun,
+                    hour: 20,
+                    min: 0
+                })
+            );
+            assert_eq!(
+                find_next_alarm(&alarms, Weekday::Sun, 20, 31),
+                Some(Alarm {
+                    day: Weekday::Fri,
+                    hour: 17,
+                    min: 30
+                })
+            );
+        }
 
-            next = find_next_alarm(&alarms, Weekday::Sat, 18, 0);
-            assert_eq!(next, Some((Weekday::Sun, 19, 30)));
+        #[test]
+        fn test_next_2() {
+            setup_logger();
+            let rule1 = Rule {
+                serial: 1,
+                days: vec!["Sat".to_string()],
+                interval: 2,
+                from: 12,
+                to: 13,
+            };
 
-            next = find_next_alarm(&alarms, Weekday::Sun, 18, 0);
-            assert_eq!(next, Some((Weekday::Sun, 19, 30)));
+            let rules = vec![rule1];
+            let alarms = get_alarms(&rules);
 
-            next = find_next_alarm(&alarms, Weekday::Sun, 19, 0);
-            assert_eq!(next, Some((Weekday::Sun, 19, 30)));
+            let mins: Vec<usize> = (2..=58).step_by(2).collect();
+            let expected = hashmap! {
+                Weekday::Sat => hashmap! {
+                    12 => mins,
+                    13 => vec![0],
+                },
+            };
 
-            next = find_next_alarm(&alarms, Weekday::Sun, 19, 20);
-            assert_eq!(next, Some((Weekday::Sun, 19, 30)));
+            assert_eq!(alarms, expected);
 
-            next = find_next_alarm(&alarms, Weekday::Sun, 19, 31);
-            assert_eq!(next, Some((Weekday::Sun, 20, 0)));
-
-            next = find_next_alarm(&alarms, Weekday::Sun, 20, 31);
-            assert_eq!(next, Some((Weekday::Fri, 17, 30)));
+            assert_eq!(
+                find_next_alarm(&alarms, Weekday::Sat, 13, 12),
+                Some(Alarm {
+                    day: Weekday::Sat,
+                    hour: 12,
+                    min: 2
+                })
+            );
         }
     }
 }
