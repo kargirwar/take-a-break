@@ -19,7 +19,7 @@ class App {
 
     bindHandlers() {
         //this event is raised when backend applies already saved rules
-        PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
+        PubSub.subscribe(Constants.EVENT_STARTED, (e) => {
             Logger.Log(TAG, JSON.stringify(e));
             this.rules = e.rules;
             let rules = new Rules(this.$root.querySelector('.tab-content.rules'));
@@ -28,7 +28,8 @@ class App {
         });
 
         //this event is raised when front end changes any rules
-        PubSub.subscribe(Constants.EVENT_RULES_UPDATED, (e) => {
+        PubSub.subscribe(Constants.EVENT_RULES_APPLIED, (e) => {
+            Logger.Log(TAG, JSON.stringify(e));
             this.rules = e.rules;
             this.$numOfRules.innerHTML = this.rules.length;
         });

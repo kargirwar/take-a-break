@@ -26,7 +26,7 @@ class Rules {
                 this.updateSerial();
 
                 PubSub.publish(Constants.EVENT_RULES_UPDATED, {
-                    rules: this.rules
+                    rules: this.getRules(true)
                 });
 
                 if (this.rules.length == 0) {
@@ -48,7 +48,7 @@ class Rules {
                 this.updateSerial();
 
                 PubSub.publish(Constants.EVENT_RULES_UPDATED, {
-                    rules: this.rules
+                    rules: this.getRules(true)
                 });
 
                 Utils.info("Saved", 2000);
@@ -191,7 +191,7 @@ class Rules {
             return false;
         }
 
-        if (this.isDuplicate(this.getRule($r), serial)) {
+        if (this.isDuplicate(this.getRule($r).rule, serial)) {
             Utils.alert("Duplicate rule", 3000);
             return false;
         }
@@ -234,16 +234,24 @@ class Rules {
         return false;
     }
 
-    getRules() {
+    getRules(onlySaved = false) {
         let rules = [];
         let serial = 1;
-        [...document.querySelectorAll('.rule')].forEach(($r) => {
+        let $rules = document.querySelectorAll('.rule');
+
+        for (let i = 0; i < $rules.length; i++) {
             let r = {};
             r.serial = serial;
-            Object.assign(r, this.getRule($r));
+            let result = this.getRule($rules[i]);
+
+            if (onlySaved == true && result.isSaved == false) {
+                continue;
+            }
+
+            Object.assign(r, result.rule);
             rules.push(r);
             serial++;
-        });
+        }
 
         return rules;
     }
@@ -262,7 +270,9 @@ class Rules {
         r.from = parseInt($r.querySelector('.from').value);
         r.to = parseInt($r.querySelector('.to').value);
 
-        return r;
+        let isSaved = ($r.querySelector('.save-rule').style.display == 'none') ? true : false;
+
+        return {rule: r, isSaved: isSaved};
     }
 }
 

@@ -53,11 +53,7 @@ mod ui_handler {
         CmdUpdateRules,
         //For UI
         EvtRulesApplied,
-
-        //For alarm module
-        //CmdShutdown,
-        //received from alarm module
-        //CmdPlayAlarm,
+        EvtStarted,
 
         //For alarm manager
         CmdUpdateAlarms,
@@ -80,6 +76,7 @@ mod ui_handler {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
                 MessageType::EvtNextAlarm => write!(f, "event-next-alarm"),
+                MessageType::EvtStarted => write!(f, "event-started"),
                 MessageType::EvtRulesApplied => write!(f, "event-rules-applied"),
                 _ => write!(f, "not-implemented"),
             }
@@ -211,7 +208,7 @@ mod ui_handler {
             };
         }
 
-        fn handle_ui_message(&self, msg: String) {
+        fn handle_ui_message(&mut self, msg: String) {
             let json = match serde_json::from_str::<serde_json::Value>(&msg) {
                 Ok(parsed) => parsed,
                 Err(_) => return,
@@ -246,11 +243,11 @@ mod ui_handler {
             });
 
             self.win_handle
-                .emit_all(&MessageType::EvtRulesApplied.to_string(), json.to_string())
+                .emit_all(&MessageType::EvtStarted.to_string(), json.to_string())
                 .unwrap();
         }
 
-        fn handle_update_rules(&self, json: serde_json::Value) {
+        fn handle_update_rules(&mut self, json: serde_json::Value) {
             debug!("rules: {}", json);
             let mut rule_objects: Vec<Rule> = Vec::new();
 
@@ -268,9 +265,20 @@ mod ui_handler {
 
             let c = Message {
                 typ: MessageType::CmdUpdateAlarms,
-                payload: Payload::Rules(rule_objects),
+                payload: Payload::Rules(rule_objects.clone()),
             };
             self.am_tx.send(c).unwrap();
+
+            self.rules = rule_objects;
+
+            //inform UI
+            let json = json!({
+                "rules": serde_json::to_string(&self.rules).unwrap()
+            });
+
+            self.win_handle
+                .emit_all(&MessageType::EvtRulesApplied.to_string(), json.to_string())
+                .unwrap();
         }
 
         fn save_rules(rules: &Vec<Rule>) {

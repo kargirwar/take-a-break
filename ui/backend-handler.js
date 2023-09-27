@@ -38,9 +38,18 @@ class BackendHandler {
 
         appWindow.listen(Constants.EVENT_RULES_APPLIED, (e) => {
             let json = JSON.parse(e.payload);
-            Logger.Log(TAG, json.rules);
+            Logger.Log(TAG, `EVENT_RULES_APPLIED: ${json.rules}`);
 
             PubSub.publish(Constants.EVENT_RULES_APPLIED, {
+                rules: JSON.parse(json.rules)
+            });
+        });
+
+        appWindow.listen(Constants.EVENT_STARTED, (e) => {
+            let json = JSON.parse(e.payload);
+            Logger.Log(TAG, `EVENT_STARTED: ${json.rules}`);
+
+            PubSub.publish(Constants.EVENT_STARTED, {
                 rules: JSON.parse(json.rules)
             });
         });

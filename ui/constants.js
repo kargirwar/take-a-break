@@ -46,6 +46,10 @@ class Constants {
     }
 
     //from rust
+    static get EVENT_STARTED() {
+        return 'event-started';
+    }
+
     static get EVENT_RULES_APPLIED() {
         return 'event-rules-applied';
     }
