@@ -5,7 +5,7 @@ mod ui_handler;
 mod utils;
 
 use log::debug;
-// use tauri::Manager;
+use tauri::Manager;
 use tokio::sync::mpsc;
 
 fn main() {
