@@ -9,8 +9,10 @@ mod alarm_manager {
 
     use super::alarm_utils::*;
     use crate::player::play;
-    use crate::Alarm;
-    use crate::{BcastReceiver, BcastSender, Message, MessageType, Payload};
+    // use crate::Alarm;
+    // use crate::{BcastReceiver, BcastSender, Message, MessageType, Payload};
+    use crate::ui_handler::{Alarm, BcastReceiver, BcastSender, Message, MessageType, Payload};
+
     use chrono::{offset::Local, Datelike, Timelike, Weekday};
     use std::time::Duration;
 

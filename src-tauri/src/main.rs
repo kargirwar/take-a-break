@@ -1,57 +1,46 @@
-//! A simple, configurable timer which serves as a reminder to take
-//! regular breaks while working on a desktop/laptop.
-//!
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod player;
 mod ui_handler;
 mod utils;
 
-use crate::ui_handler::*;
 use log::debug;
-use tauri::{AboutMetadata, Menu, MenuItem};
+// use tauri::Manager;
 use tokio::sync::mpsc;
-use tokio::sync::mpsc::{Receiver, Sender};
 
-#[tokio::main]
-async fn main() {
+fn main() {
     utils::setup_logger();
-    debug!("Starting up!");
-    let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel(10);
+    let log_path = utils::get_log_file_name();
+    debug!("Logging to {}", log_path);
 
-    tauri::async_runtime::set(tokio::runtime::Handle::current());
+    debug!("Starting up.");
+    // 1. Create channel OUTSIDE
+    let (tx, rx) = mpsc::channel::<String>(10);
 
-    let mut meta_data = AboutMetadata::default();
-    meta_data.version = Some("0.1".to_string());
-
-    let menu = Menu::new()
-        .add_native_item(MenuItem::Quit)
-        .add_native_item(MenuItem::About("Take a break!".to_string(), meta_data));
-
-    let app = tauri::Builder::default()
-        .menu(menu)
+    tauri::Builder::default()
+        // 2. Register state
         .manage(tx.clone())
+        .setup(|app| {
+            // --- Devtools (optional) ---
+            #[cfg(debug_assertions)]
+            {
+                let window = app.get_webview_window("main").unwrap();
+                window.open_devtools();
+            }
+
+            // --- Background UI handler ---
+            let handle = app.handle().clone();
+            let ui = ui_handler::UiHandler::new(rx, handle);
+            ui.run();
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![command])
-        .build(tauri::generate_context!())
-        .expect("error while building tauri application");
-
-    let handle = app.handle();
-    let ui = UiHandler::new(rx, handle);
-    ui.run();
-
-    app.run(|_app_handle, event| match event {
-        tauri::RunEvent::ExitRequested { .. } => {
-            //api.prevent_exit();
-        }
-        _ => {}
-    });
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
 
 #[tauri::command]
-async fn command(payload: &str, tx: tauri::State<'_, Sender<String>>) -> Result<(), ()> {
-    match tx.send(String::from(payload)).await {
-        Ok(_) => return Ok(()),
-        Err(_) => return Err(()),
-    }
+async fn command(payload: String, tx: tauri::State<'_, mpsc::Sender<String>>) -> Result<(), ()> {
+    tx.send(payload).await.map_err(|_| ())
 }

@@ -78,8 +78,8 @@ mod utils {
         }
     }
 
-    /// Logger settings.Sends all debug prints to <app_dir>/debug.log
-    /// Log file rotated after 1M.
+    // Logger settings.Sends all debug prints to <app_dir>/debug.log
+    // Log file rotated after 1M.
     pub fn setup_logger() {
         //setup rotation
         let file_name = get_log_file_name();
@@ -112,13 +112,13 @@ mod utils {
         log4rs::init_config(config).unwrap();
     }
 
-    fn get_log_file_name() -> String {
-        if let Some(mut path) = get_app_dir() {
-            path.push("debug.log");
-            return path.to_string_lossy().to_string();
-        }
+    pub fn get_log_file_name() -> String {
+        let mut path = get_app_dir().expect("get_app_dir() returned None");
 
-        return "".to_string();
+        std::fs::create_dir_all(&path).expect("failed to create app dir");
+
+        path.push("debug.log");
+        path.to_string_lossy().to_string()
     }
 
     pub fn get_settings_file_name() -> String {

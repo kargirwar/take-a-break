@@ -6,7 +6,8 @@ mod ui_handler {
     use super::alarm_manager::*;
     use crate::utils::*;
     use chrono::Weekday;
-    use log::debug;
+    use tauri::Emitter;
+    // use log::debug;
     use serde::ser::SerializeStruct;
     use serde::Deserialize;
     use serde::Serialize;
@@ -17,9 +18,8 @@ mod ui_handler {
     use std::fs::{File, OpenOptions};
     use std::io::{Read, Write};
     use tauri::AppHandle;
-    use tauri::Manager;
+    // use tauri::Manager;
     use tauri::Wry;
-    use tokio::select;
     use tokio::sync::broadcast;
     use tokio::sync::mpsc::Receiver;
 
@@ -125,11 +125,7 @@ mod ui_handler {
             let (am_tx, am_rx): (BcastSender<Message>, BcastReceiver<Message>) =
                 broadcast::channel(BCAST_CHANNEL_SIZE);
 
-            let am = AlarmManager::new(am_tx.clone(), am_tx.subscribe());
-            am.run();
-
             let rules = Self::read_rules();
-            let prev_alarm = None;
 
             Self {
                 ui_rx,
@@ -137,27 +133,30 @@ mod ui_handler {
                 am_tx,
                 am_rx,
                 rules,
-                prev_alarm,
+                prev_alarm: None,
             }
         }
 
         pub fn run(mut self) {
-            tokio::spawn(async move {
+            let am = AlarmManager::new(self.am_tx.clone(), self.am_tx.subscribe());
+
+            // Start AlarmManager inside Tauri runtime
+            tauri::async_runtime::spawn(async move {
+                am.run();
+            });
+
+            // UI + Alarm event loop
+            tauri::async_runtime::spawn(async move {
                 loop {
-                    select! {
+                    tokio::select! {
                         message1 = self.ui_rx.recv() => {
-                            match message1 {
-                                Some(msg) => {
-                                    debug!("Received from UI: {}", msg);
-                                    self.handle_ui_message(msg);
-                                },
-                                None => debug!("Channel 1 closed"),
+                            if let Some(msg) = message1 {
+                                self.handle_ui_message(msg);
                             }
                         }
                         message2 = self.am_rx.recv() => {
-                            match message2 {
-                                Ok(msg) => self.handle_am_message(msg),
-                                Err(e) => debug!("{}", e),
+                            if let Ok(msg) = message2 {
+                                self.handle_am_message(msg);
                             }
                         }
                     }
@@ -176,12 +175,10 @@ mod ui_handler {
         fn handle_next_alarm(&self, payload: Payload) {
             let json: Value = match payload {
                 Payload::Alarm(alarm) => match alarm {
-                    Some(alarm) => {
-                        json!({
-                            "next-alarm": alarm,
-                            "prev-alarm": self.prev_alarm
-                        })
-                    }
+                    Some(alarm) => json!({
+                        "next-alarm": alarm,
+                        "prev-alarm": self.prev_alarm
+                    }),
                     None => json!({
                         "next-alarm": null,
                         "prev-alarm": null
@@ -190,22 +187,15 @@ mod ui_handler {
                 _ => return,
             };
 
-            //inform UI
             self.win_handle
-                .emit_all(&MessageType::EvtNextAlarm.to_string(), json.to_string())
+                .emit(&MessageType::EvtNextAlarm.to_string(), json.to_string())
                 .unwrap();
         }
 
         fn handle_playing_alarm(&mut self, payload: Payload) {
-            match payload {
-                Payload::Alarm(alarm) => match alarm {
-                    Some(alarm) => {
-                        self.prev_alarm = Some(alarm);
-                    }
-                    None => (),
-                },
-                _ => return,
-            };
+            if let Payload::Alarm(Some(alarm)) = payload {
+                self.prev_alarm = Some(alarm);
+            }
         }
 
         fn handle_ui_message(&mut self, msg: String) {
@@ -216,20 +206,14 @@ mod ui_handler {
 
             if let Some(typ) = json.get("type").and_then(|n| n.as_str()) {
                 match MessageType::from_str(typ) {
-                    Some(MessageType::CmdUpdateRules) => {
-                        self.handle_update_rules(json);
-                    }
-
-                    Some(MessageType::CmdStartup) => {
-                        self.handle_startup();
-                    }
-                    _ => debug!("ui_handler::Unknown command"),
+                    Some(MessageType::CmdUpdateRules) => self.handle_update_rules(json),
+                    Some(MessageType::CmdStartup) => self.handle_startup(),
+                    _ => (),
                 }
             }
         }
 
         fn handle_startup(&self) {
-            //startoff timers
             let c = Message {
                 typ: MessageType::CmdUpdateAlarms,
                 payload: Payload::Rules(self.rules.clone()),
@@ -237,28 +221,24 @@ mod ui_handler {
 
             self.am_tx.send(c).unwrap();
 
-            //inform UI
             let json = json!({
                 "rules": serde_json::to_string(&self.rules).unwrap()
             });
 
             self.win_handle
-                .emit_all(&MessageType::EvtStarted.to_string(), json.to_string())
+                .emit(&MessageType::EvtStarted.to_string(), json.to_string())
                 .unwrap();
         }
 
         fn handle_update_rules(&mut self, json: serde_json::Value) {
-            debug!("rules: {}", json);
             let mut rule_objects: Vec<Rule> = Vec::new();
 
             if let Some(rules) = json.get("rules").and_then(serde_json::Value::as_array) {
                 for rule_json in rules {
                     let rule: Rule = serde_json::from_value(rule_json.clone())
-                        .expect("ui_handler:Rule deserialization error");
+                        .expect("Rule deserialization error");
                     rule_objects.push(rule);
                 }
-
-                debug!("ui_handler:{:#?}", rule_objects);
             }
 
             Self::save_rules(&rule_objects);
@@ -267,17 +247,16 @@ mod ui_handler {
                 typ: MessageType::CmdUpdateAlarms,
                 payload: Payload::Rules(rule_objects.clone()),
             };
-            self.am_tx.send(c).unwrap();
 
+            self.am_tx.send(c).unwrap();
             self.rules = rule_objects;
 
-            //inform UI
             let json = json!({
                 "rules": serde_json::to_string(&self.rules).unwrap()
             });
 
             self.win_handle
-                .emit_all(&MessageType::EvtRulesApplied.to_string(), json.to_string())
+                .emit(&MessageType::EvtRulesApplied.to_string(), json.to_string())
                 .unwrap();
         }
 
@@ -288,24 +267,28 @@ mod ui_handler {
         }
 
         fn read_rules() -> Vec<Rule> {
+            let path = get_settings_file_name();
+
+            // Ensure parent directory exists
+            if let Some(parent) = std::path::Path::new(&path).parent() {
+                std::fs::create_dir_all(parent).unwrap();
+            }
+
             let mut file = OpenOptions::new()
                 .read(true)
                 .write(true)
                 .create(true)
-                .open(get_settings_file_name())
+                .open(&path)
                 .unwrap();
 
             let mut contents = String::new();
             file.read_to_string(&mut contents).unwrap();
 
-            // Deserialize the content into a Vec<Rule>
-            let rules: Vec<Rule> = if contents.is_empty() {
+            if contents.trim().is_empty() {
                 Vec::new()
             } else {
-                serde_json::from_str(&contents).unwrap()
-            };
-
-            return rules;
+                serde_json::from_str(&contents).unwrap_or_else(|_| Vec::new())
+            }
         }
     }
 }

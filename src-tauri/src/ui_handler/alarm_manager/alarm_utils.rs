@@ -1,6 +1,6 @@
 mod alarm_utils {
-    use crate::Alarm;
-    use crate::Rule;
+    use crate::ui_handler::{Alarm, Rule};
+    // use crate::Rule;
     use chrono::Weekday;
     use log::debug;
     use std::collections::HashMap;

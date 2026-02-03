@@ -1,11 +1,15 @@
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Constants } from './constants.js'
 import { PubSub } from './pubsub.js'
 import { Utils } from './utils.js'
 import { Logger } from './logger.js'
 
 const TAG = "backend-handler";
-const appWindow = window.__TAURI__.window.appWindow;
-const { invoke } = window.__TAURI__.tauri;
+// const appWindow = window.__TAURI__.window.appWindow;
+// const { invoke } = window.__TAURI__.tauri;
+const appWindow = getCurrentWindow();
+
 
 class BackendHandler {
     constructor() {
